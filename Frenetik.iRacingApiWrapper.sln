@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestWrapper", "TestWrapper\TestWrapper.csproj", "{B0A4AC3B-F9CA-44D1-B63C-EB3D8DA30CEF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frenetik.iRacingApiWrapper", "Frenetik.iRacingApiWrapper\Frenetik.iRacingApiWrapper.csproj", "{27208B4C-8C45-41E1-A43E-5584DDB2ABE4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B0A4AC3B-F9CA-44D1-B63C-EB3D8DA30CEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0A4AC3B-F9CA-44D1-B63C-EB3D8DA30CEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0A4AC3B-F9CA-44D1-B63C-EB3D8DA30CEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0A4AC3B-F9CA-44D1-B63C-EB3D8DA30CEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27208B4C-8C45-41E1-A43E-5584DDB2ABE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27208B4C-8C45-41E1-A43E-5584DDB2ABE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27208B4C-8C45-41E1-A43E-5584DDB2ABE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27208B4C-8C45-41E1-A43E-5584DDB2ABE4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3AD8B215-DEE0-469C-9512-3B234C4BD7AD}
+	EndGlobalSection
+EndGlobal
