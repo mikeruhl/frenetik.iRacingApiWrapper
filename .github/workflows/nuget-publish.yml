@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -41,6 +41,8 @@ jobs:
         dotnet pack Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj --configuration Release --no-build --output ./nupkg /p:Version=${{ env.VERSION }} /p:PackageVersion=${{ env.VERSION }}
 
     - name: Publish to NuGet
+      shell: bash
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push ./nupkg/*.nupkg --api-key $NUGET_API_KEY --source "https://api.nuget.org/v3/index.json"
+      run: |
+        dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key "$NUGET_API_KEY"
