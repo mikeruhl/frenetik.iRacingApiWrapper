@@ -1,0 +1,46 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags like v1.0.0
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Extract version from tag
+      id: get_version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    - name: Clean workspace
+      run: dotnet clean Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj --configuration Release
+
+    - name: Restore dependencies
+      run: dotnet restore Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj
+
+    - name: Build project
+      run: dotnet build Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj --configuration Release --no-restore
+
+    - name: Pack NuGet package
+      run: |
+        mkdir -p ./nupkg
+        dotnet pack Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj --configuration Release --no-build --output ./nupkg /p:Version=${{ env.VERSION }} /p:PackageVersion=${{ env.VERSION }}
+
+    - name: Publish to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ./nupkg/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
