@@ -182,14 +182,6 @@ public class IRacingApiService
     public Task<LeagueSeasonSessionsResult> GetLeagueSeasonsSessions(int leagueId, int seasonId, bool? resultsOnly = null) => GetResources<LeagueSeasonSessionsResult>($"/league/season_sessions", true, BuildParameters(["league_id", "season_id", "results_only"], [leagueId, seasonId, resultsOnly]));
 
     /// <summary>
-    /// Lookup Club History
-    /// </summary>
-    /// <param name="seasonYear">Season Year</param>
-    /// <param name="seasonQuarter">Season Quarter</param>
-    /// <returns></returns>
-    public Task<List<ClubHistory>> LookupClubHistory(int seasonYear, int seasonQuarter) => GetResources<List<ClubHistory>>("/lookup/club_history", true, BuildParameters(["season_year", "season_quarter"], [seasonYear, seasonQuarter]));
-
-    /// <summary>
     /// Lookup Countries
     /// </summary>
     /// <returns></returns>
@@ -487,24 +479,22 @@ public class IRacingApiService
     /// </summary>
     /// <param name="seasonId">Required.</param>
     /// <param name="carClassId">Required.</param>
-    /// <param name="clubId">Defaults to all (-1).</param>
     /// <param name="division">Divisions are 0-based: 0 is Division 1, 10 is Rookie. See /data/constants/divisons for more information. Defaults to all.</param>
     /// <param name="raceWeekNum">The first race week of a season is 0.</param>
     /// <returns></returns>
-    public Task<StatsSeasonDriverStandingsResult> GetStatsSeasonDriverStandings(int seasonId, int carClassId, int? clubId = null, int? division = null, int? raceWeekNum = null) =>
-        GetResources<StatsSeasonDriverStandingsResult>("/stats/season_driver_standings", true, BuildParameters(["season_id", "car_class_id", "club_id", "division", "race_week_num"], [seasonId, carClassId, clubId, division, raceWeekNum]));
+    public Task<StatsSeasonDriverStandingsResult> GetStatsSeasonDriverStandings(int seasonId, int carClassId, int? division = null, int? raceWeekNum = null) =>
+        GetResources<StatsSeasonDriverStandingsResult>("/stats/season_driver_standings", true, BuildParameters(["season_id", "car_class_id", "division", "race_week_num"], [seasonId, carClassId, division, raceWeekNum]));
 
     /// <summary>
     /// Get Stats Season Supersession Results
     /// </summary>
     /// <param name="seasonId">Required.</param>
     /// <param name="carClassId">Required.</param>
-    /// <param name="clubId">Defaults to all (-1).</param>
     /// <param name="division">Divisions are 0-based: 0 is Division 1, 10 is Rookie. See /data/constants/divisons for more information. Defaults to all.</param>
     /// <param name="raceWeekNum">The first race week of a season is 0.</param>
     /// <returns></returns>
-    public Task<StatsSeasonSuperSessionStandingsResult> GetStatsSeasonSuperSessionStandings(int seasonId, int carClassId, int? clubId = null, int? division = null, int? raceWeekNum = null) =>
-        GetResources<StatsSeasonSuperSessionStandingsResult>("/stats/season_super_session_standings", true, BuildParameters(["season_id", "car_class_id", "club_id", "division", "race_week_num"], [seasonId, carClassId, clubId, division, raceWeekNum]));
+    public Task<StatsSeasonSuperSessionStandingsResult> GetStatsSeasonSuperSessionStandings(int seasonId, int carClassId, int? division = null, int? raceWeekNum = null) =>
+        GetResources<StatsSeasonSuperSessionStandingsResult>("/stats/season_supersession_standings", true, BuildParameters(["season_id", "car_class_id", "division", "race_week_num"], [seasonId, carClassId, division, raceWeekNum]));
 
     /// <summary>
     /// Get Stats Season Team Standings
@@ -521,12 +511,11 @@ public class IRacingApiService
     /// </summary>
     /// <param name="seasonId">Required.</param>
     /// <param name="carClassId">Required.</param>
-    /// <param name="clubId">Defaults to all (-1).</param>
     /// <param name="division">Divisions are 0-based: 0 is Division 1, 10 is Rookie. See /data/constants/divisons for more information. Defaults to all.</param>
     /// <param name="raceWeekNum">The first race week of a season is 0.</param>
     /// <returns></returns>
-    public Task<StatsSeasonTtStandingsResult> GetStatsSeasonTtStandings(int seasonId, int carClassId, int? clubId = null, int? division = null, int? raceWeekNum = null) =>
-        GetResources<StatsSeasonTtStandingsResult>("/stats/season_tt_standings", true, BuildParameters(["season_id", "car_class_id", "club_id", "division", "race_week_num"], [seasonId, carClassId, clubId, division, raceWeekNum]));
+    public Task<StatsSeasonTtStandingsResult> GetStatsSeasonTtStandings(int seasonId, int carClassId, int? division = null, int? raceWeekNum = null) =>
+        GetResources<StatsSeasonTtStandingsResult>("/stats/season_tt_standings", true, BuildParameters(["season_id", "car_class_id", "division", "race_week_num"], [seasonId, carClassId, division, raceWeekNum]));
 
     /// <summary>
     /// Get Stats Season TT Results
@@ -534,11 +523,10 @@ public class IRacingApiService
     /// <param name="seasonId">Required.</param>
     /// <param name="carClassId">Required.</param>
     /// <param name="raceWeekNum">The first race week of a season is 0. (Required)</param>
-    /// <param name="clubId">Defaults to all (-1).</param>
     /// <param name="division">Divisions are 0-based: 0 is Division 1, 10 is Rookie. See /data/constants/divisons for more information. Defaults to all.</param>
     /// <returns></returns>
-    public Task<StatsSeasonTtResults> GetStatsSeasonTtResults(int seasonId, int carClassId, int raceWeekNum, int? clubId = null, int? division = null) =>
-        GetResources<StatsSeasonTtResults>("/stats/season_tt_results", true, BuildParameters(["season_id", "car_class_id", "race_week_num", "club_id", "division"], [seasonId, carClassId, raceWeekNum, clubId, division]));
+    public Task<StatsSeasonTtResults> GetStatsSeasonTtResults(int seasonId, int carClassId, int raceWeekNum, int? division = null) =>
+        GetResources<StatsSeasonTtResults>("/stats/season_tt_results", true, BuildParameters(["season_id", "car_class_id", "race_week_num", "division"], [seasonId, carClassId, raceWeekNum, division]));
 
     /// <summary>
     /// Get Stats World Record Results
@@ -557,11 +545,10 @@ public class IRacingApiService
     /// <param name="seasonId">Required.</param>
     /// <param name="carClassId">Required.</param>
     /// <param name="raceWeekNum">The first race week of a season is 0. (Required)</param>
-    /// <param name="clubId">Defaults to all (-1).</param>
     /// <param name="division">Divisions are 0-based: 0 is Division 1, 10 is Rookie. See /data/constants/divisons for more information. Defaults to all.</param>
     /// <returns></returns>
-    public Task<StatsSeasonQualifyResults> GetStatsSeasonQualifyResults(int seasonId, int carClassId, int raceWeekNum, int? clubId = null, int? division = null) =>
-        GetResources<StatsSeasonQualifyResults>("/stats/season_qualify_results", true, BuildParameters(["season_id", "car_class_id", "race_week_num", "club_id", "division"], [seasonId, carClassId, raceWeekNum, clubId, division]));
+    public Task<StatsSeasonQualifyResults> GetStatsSeasonQualifyResults(int seasonId, int carClassId, int raceWeekNum, int? division = null) =>
+        GetResources<StatsSeasonQualifyResults>("/stats/season_qualify_results", true, BuildParameters(["season_id", "car_class_id", "race_week_num", "division"], [seasonId, carClassId, raceWeekNum, division]));
 
     /// <summary>
     /// Get Team by Id

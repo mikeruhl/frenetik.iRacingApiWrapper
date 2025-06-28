@@ -390,9 +390,6 @@ public class SubSessionResults
         [JsonPropertyName("drop_race")]
         public bool DropRace { get; set; }
 
-        [JsonPropertyName("club_points")]
-        public int ClubPoints { get; set; }
-
         [JsonPropertyName("position")]
         public int Position { get; set; }
 
@@ -413,15 +410,15 @@ public class SubSessionResults
 
         [JsonPropertyName("car_class_short_name")]
         public string CarClassShortName { get; set; } = string.Empty;
+        
+        [JsonPropertyName("flair_id")]
+        public int FlairId { get; set; }
 
-        [JsonPropertyName("club_id")]
-        public int ClubId { get; set; }
+        [JsonPropertyName("flair_name")]
+        public string FlairName { get; set; } = string.Empty;
 
-        [JsonPropertyName("club_name")]
-        public string ClubName { get; set; } = string.Empty;
-
-        [JsonPropertyName("club_shortname")]
-        public string ClubShortName { get; set; } = string.Empty;
+        [JsonPropertyName("flair_shortname")]
+        public string FlairShortName { get; set; } = string.Empty;
 
         [JsonPropertyName("division")]
         public int Division { get; set; }

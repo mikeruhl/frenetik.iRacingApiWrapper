@@ -55,7 +55,4 @@ public class StatsMemberCareerStat
 
     [JsonPropertyName("laps_led_percentage")]
     public double LapsLedPercentage { get; set; }
-
-    [JsonPropertyName("total_club_points")]
-    public int TotalClubPoints { get; set; }
 }

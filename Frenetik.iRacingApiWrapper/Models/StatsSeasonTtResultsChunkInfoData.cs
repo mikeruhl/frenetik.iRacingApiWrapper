@@ -14,11 +14,14 @@ public class StatsSeasonTtResultsChunkInfoData
     [JsonPropertyName("division")]
     public int Division { get; set; }
 
-    [JsonPropertyName("club_id")]
-    public int ClubId { get; set; }
+    [JsonPropertyName("flair_id")]
+    public int FlairId { get; set; }
 
-    [JsonPropertyName("club_name")]
-    public string ClubName { get; set; } = string.Empty;
+    [JsonPropertyName("flair_name")]
+    public string FlairName { get; set; } = string.Empty;
+
+    [JsonPropertyName("flair_shortname")]
+    public string FlairShortName { get; set; } = string.Empty;
 
     [JsonPropertyName("license")]
     public StatsSeasonTtResultsChunkInfoLicense License { get; set; } = new StatsSeasonTtResultsChunkInfoLicense();

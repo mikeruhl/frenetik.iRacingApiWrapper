@@ -140,11 +140,14 @@ public class MemberProfileInfo
     [JsonPropertyName("member_since")]
     public string MemberSince { get; set; } = string.Empty;
 
-    [JsonPropertyName("club_id")]
-    public int ClubId { get; set; }
+    [JsonPropertyName("flair_id")]
+    public int FlairId { get; set; }
 
-    [JsonPropertyName("club_name")]
-    public string ClubName { get; set; } = string.Empty;
+    [JsonPropertyName("flair_name")]
+    public string FlairName { get; set; } = string.Empty;
+
+    [JsonPropertyName("flair_shortname")]
+    public string FlairShortName { get; set; } = string.Empty;
 
     [JsonPropertyName("ai")]
     public bool Ai { get; set; }

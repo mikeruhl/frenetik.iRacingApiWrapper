@@ -254,9 +254,6 @@ public class Session
     [JsonPropertyName("admins")]
     public List<SessionDriver> Admins { get; set; } = new List<SessionDriver>();
 
-    [JsonPropertyName("allowed_clubs")]
-    public List<int> AllowedClubs { get; set; } = new List<int>();
-
     [JsonPropertyName("allowed_teams")]
     public List<int> AllowedTeams { get; set; } = new List<int>();
 

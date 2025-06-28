@@ -29,9 +29,6 @@ public class StatsSeasonDriverStandingsResult : IChunkInfo<StatsSeasonDriverStan
     [JsonPropertyName("division")]
     public int Division { get; set; }
 
-    [JsonPropertyName("club_id")]
-    public int ClubId { get; set; }
-
     [JsonPropertyName("customer_rank")]
     public int CustomerRank { get; set; }
 

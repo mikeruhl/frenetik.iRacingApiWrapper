@@ -113,9 +113,6 @@ public class StatsMemberRecentRacesHelmetRace
     [JsonPropertyName("incidents")]
     public int Incidents { get; set; }
 
-    [JsonPropertyName("club_points")]
-    public int ClubPoints { get; set; }
-
     [JsonPropertyName("points")]
     public int Points { get; set; }
 
