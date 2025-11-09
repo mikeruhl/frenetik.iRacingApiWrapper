@@ -1,0 +1,130 @@
+name: API Snapshot Monitor
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper git operations
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run snapshot comparison
+        id: snapshot
+        continue-on-error: true
+        env:
+          IRACING_USERNAME: ${{ secrets.IRACING_USERNAME }}
+          IRACING_PASSWORD: ${{ secrets.IRACING_PASSWORD }}
+        run: |
+          dotnet test Frenetik.iRacingApiWrapper.SnapshotTests/Frenetik.iRacingApiWrapper.SnapshotTests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName=Frenetik.iRacingApiWrapper.SnapshotTests.ApiSnapshotTests.CompareApiSnapshots" \
+            --logger "console;verbosity=detailed"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -f snapshots/change-report-*.md ]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+            REPORT_FILE=$(ls -t snapshots/change-report-*.md | head -1)
+            echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update snapshots
+        if: steps.snapshot.outcome == 'failure' && steps.check_changes.outputs.changes_detected == 'true'
+        run: |
+          dotnet test Frenetik.iRacingApiWrapper.SnapshotTests/Frenetik.iRacingApiWrapper.SnapshotTests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName=Frenetik.iRacingApiWrapper.SnapshotTests.ApiSnapshotTests.CaptureApiSnapshots" \
+            --logger "console;verbosity=detailed"
+
+      - name: Commit updated snapshots
+        if: steps.snapshot.outcome == 'failure' && steps.check_changes.outputs.changes_detected == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add snapshots/*.snapshot.json
+          git commit -m "Update API snapshots - Changes detected on $(date -u +%Y-%m-%d)" || echo "No changes to commit"
+          git push
+
+      - name: Create GitHub Issue
+        if: steps.snapshot.outcome == 'failure' && steps.check_changes.outputs.changes_detected == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportFile = '${{ steps.check_changes.outputs.report_file }}';
+
+            if (!fs.existsSync(reportFile)) {
+              console.log('No report file found');
+              return;
+            }
+
+            const reportContent = fs.readFileSync(reportFile, 'utf8');
+            const timestamp = new Date().toISOString().split('T')[0];
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `⚠️ iRacing API Changes Detected - ${timestamp}`,
+              body: reportContent + '\n\n---\n\n' +
+                    '**Next Steps:**\n' +
+                    '1. Review the changes above\n' +
+                    '2. Update the wrapper models if needed\n' +
+                    '3. Update tests\n' +
+                    '4. Update version and changelog\n' +
+                    '5. Close this issue when addressed\n\n' +
+                    `**Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['api-change', 'automated']
+            });
+
+            console.log(`Created issue #${issue.data.number}`);
+
+      - name: Upload change report
+        if: steps.check_changes.outputs.changes_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-change-report
+          path: snapshots/change-report-*.md
+          retention-days: 90
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## API Snapshot Monitor Results" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.snapshot.outcome }}" == "success" ]; then
+            echo "✅ No API changes detected" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.check_changes.outputs.changes_detected }}" == "true" ]; then
+            echo "⚠️ API changes detected and issue created" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "See the change report artifact for details" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Snapshot test failed" >> $GITHUB_STEP_SUMMARY
+          fi

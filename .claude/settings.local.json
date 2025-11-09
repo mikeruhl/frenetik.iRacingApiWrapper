@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet sln add Frenetik.iRacingApiWrapper.SnapshotTests/Frenetik.iRacingApiWrapper.SnapshotTests.csproj)",
+      "Bash(test -f .gitignore)",
+      "Bash(cat .gitignore)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

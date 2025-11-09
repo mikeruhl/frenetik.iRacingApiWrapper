@@ -398,3 +398,12 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# API Snapshot Testing
+# Keep snapshots (.snapshot.json files) in git for tracking API changes
+# But ignore generated change reports
+snapshots/change-report-*.md
+
+# Snapshot helper scripts (may contain credentials)
+capture-snapshots.ps1
+capture-snapshots.sh
