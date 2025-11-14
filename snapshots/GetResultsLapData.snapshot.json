@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetResultsLapData",
+  "method": "GetResultsLapData",
+  "timestamp": "2025-11-09T15:59:10.386094Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetStatsMemberYearly",
+  "method": "GetStatsMemberYearly",
+  "timestamp": "2025-11-09T15:59:12.2169479Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

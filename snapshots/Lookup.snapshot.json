@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/Lookup",
+  "method": "Lookup",
+  "timestamp": "2025-11-09T15:59:13.3746135Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "Value cannot be null. (Parameter \u0027source\u0027)",
+  "statusCode": 500
+}

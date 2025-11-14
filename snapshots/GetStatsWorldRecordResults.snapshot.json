@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetStatsWorldRecordResults",
+  "method": "GetStatsWorldRecordResults",
+  "timestamp": "2025-11-09T15:59:12.9407474Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

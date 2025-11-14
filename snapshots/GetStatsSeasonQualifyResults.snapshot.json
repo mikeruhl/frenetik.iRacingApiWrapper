@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetStatsSeasonQualifyResults",
+  "method": "GetStatsSeasonQualifyResults",
+  "timestamp": "2025-11-09T15:59:12.4250264Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

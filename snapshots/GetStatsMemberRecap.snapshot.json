@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetStatsMemberRecap",
+  "method": "GetStatsMemberRecap",
+  "timestamp": "2025-11-09T15:59:11.9030777Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

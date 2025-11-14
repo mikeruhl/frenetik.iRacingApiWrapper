@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetLeagueById",
+  "method": "GetLeagueById",
+  "timestamp": "2025-11-09T15:59:08.4734416Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

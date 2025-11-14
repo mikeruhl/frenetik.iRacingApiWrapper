@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetChunkInfoData",
+  "method": "GetChunkInfoData",
+  "timestamp": "2025-11-09T15:59:07.5652295Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "Late bound operations cannot be performed on types or methods for which ContainsGenericParameters is true.",
+  "statusCode": 500
+}

@@ -48,7 +48,7 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          if [ -f snapshots/change-report-*.md ]; then
+          if ls snapshots/change-report-*.md 1> /dev/null 2>&1; then
             echo "changes_detected=true" >> $GITHUB_OUTPUT
             REPORT_FILE=$(ls -t snapshots/change-report-*.md | head -1)
             echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT

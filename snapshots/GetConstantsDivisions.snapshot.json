@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetConstantsDivisions",
+  "method": "GetConstantsDivisions",
+  "timestamp": "2025-11-09T15:59:07.683025Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}

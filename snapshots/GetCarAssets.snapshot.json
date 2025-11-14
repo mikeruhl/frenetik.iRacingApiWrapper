@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetCarAssets",
+  "method": "GetCarAssets",
+  "timestamp": "2025-11-09T15:59:06.989154Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "Unable to authenticate with iRacing",
+  "statusCode": 500
+}

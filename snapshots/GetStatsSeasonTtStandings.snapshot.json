@@ -1,0 +1,9 @@
+{
+  "endpoint": "/data/GetStatsSeasonTtStandings",
+  "method": "GetStatsSeasonTtStandings",
+  "timestamp": "2025-11-09T15:59:12.8376257Z",
+  "success": false,
+  "responseJson": null,
+  "errorMessage": "no authentication credentials provided",
+  "statusCode": 500
+}
