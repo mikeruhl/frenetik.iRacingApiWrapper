@@ -1,7 +1,7 @@
 ﻿using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
-using Polly.Retry;
+using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
 using System.Net;
@@ -18,9 +18,8 @@ public class IRacingAuthenticator : IAuthenticator
     private readonly string _baseUrl;
     private readonly string _username;
     private readonly string _password;
-    private readonly ILogger<IRacingApiService> _logger;
     private readonly CookieContainer _cookieContainer;
-    private readonly AsyncRetryPolicy<RestResponse> _retryPolicy;
+    private readonly IAsyncPolicy<RestResponse> _retryPolicy;
 
     /// <summary>
     /// Constructor for the IRacingAuthenticator
@@ -35,7 +34,6 @@ public class IRacingAuthenticator : IAuthenticator
         _baseUrl = baseUrl;
         _username = username;
         _password = password;
-        _logger = logger;
         _cookieContainer = new CookieContainer();
         _retryPolicy = RetryPolicyBuilder.BuildAuthenticationPolicy(retrySettings, logger);
     }

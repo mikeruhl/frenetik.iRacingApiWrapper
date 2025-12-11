@@ -6,6 +6,7 @@ using Frenetik.iRacingApiWrapper.Service;
 using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 using Polly.Retry;
 using RestSharp;
 using System.Collections.Concurrent;
@@ -627,9 +628,9 @@ public class IRacingApiService
         }
     }
 
-    private AsyncRetryPolicy<RestResponse<T>> GetCachedPolicy<T>()
+    private IAsyncPolicy<RestResponse<T>> GetCachedPolicy<T>()
     {
-        return (AsyncRetryPolicy<RestResponse<T>>)_policyCache.GetOrAdd(
+        return (IAsyncPolicy<RestResponse<T>>)_policyCache.GetOrAdd(
             typeof(T),
             _ => RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger));
     }

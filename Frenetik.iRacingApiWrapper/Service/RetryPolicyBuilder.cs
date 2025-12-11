@@ -1,7 +1,6 @@
 using Frenetik.iRacingApiWrapper.Config;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 using RestSharp;
 using System.Net;
 
@@ -13,81 +12,117 @@ namespace Frenetik.iRacingApiWrapper.Service;
 public static class RetryPolicyBuilder
 {
     /// <summary>
-    /// Creates a comprehensive retry policy that handles server errors, rate limiting, and service unavailability
+    /// Creates a comprehensive retry policy that handles server errors, rate limiting, and service unavailability.
+    /// Each error type respects its own retry count limit.
     /// </summary>
-    public static AsyncRetryPolicy<RestResponse> BuildAuthenticationPolicy(
+    public static IAsyncPolicy<RestResponse> BuildAuthenticationPolicy(
         RetryPolicySettings settings,
         ILogger logger)
     {
-        return Policy<RestResponse>
-            .HandleResult(r => ShouldRetry(r, settings))
-            .WaitAndRetryAsync(
-                retryCount: GetMaxRetryCount(settings),
-                sleepDurationProvider: (retryCount, response, context) =>
-                    GetRetryDelay(retryCount, response.Result, settings, logger),
-                onRetryAsync: async (response, timeSpan, retryCount, context) =>
-                {
-                    logger.LogWarning(
-                        $"Authentication request failed with status {response.Result.StatusCode}. " +
-                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
-                    await Task.CompletedTask;
-                });
+        settings.Validate();
+
+        var rateLimitPolicy = BuildRateLimitPolicyCore<RestResponse>(settings, logger, "Authentication");
+        var serviceUnavailablePolicy = BuildServiceUnavailablePolicyCore<RestResponse>(settings, logger, "Authentication");
+        var serverErrorPolicy = BuildServerErrorPolicyCore<RestResponse>(settings, logger, "Authentication");
+
+        return Policy.WrapAsync(rateLimitPolicy, serviceUnavailablePolicy, serverErrorPolicy);
     }
 
     /// <summary>
-    /// Creates a comprehensive retry policy for regular API requests
+    /// Creates a comprehensive retry policy for regular API requests.
+    /// Each error type respects its own retry count limit.
     /// </summary>
-    public static AsyncRetryPolicy<RestResponse<T>> BuildApiPolicy<T>(
+    public static IAsyncPolicy<RestResponse<T>> BuildApiPolicy<T>(
         RetryPolicySettings settings,
         ILogger logger)
     {
-        return Policy<RestResponse<T>>
-            .HandleResult(r => ShouldRetry(r, settings))
+        settings.Validate();
+
+        var rateLimitPolicy = BuildRateLimitPolicyCore<RestResponse<T>>(settings, logger, "API");
+        var serviceUnavailablePolicy = BuildServiceUnavailablePolicyCore<RestResponse<T>>(settings, logger, "API");
+        var serverErrorPolicy = BuildServerErrorPolicyCore<RestResponse<T>>(settings, logger, "API");
+
+        return Policy.WrapAsync(rateLimitPolicy, serviceUnavailablePolicy, serverErrorPolicy);
+    }
+
+    private static IAsyncPolicy<TResponse> BuildRateLimitPolicyCore<TResponse>(
+        RetryPolicySettings settings,
+        ILogger logger,
+        string requestType)
+        where TResponse : RestResponseBase
+    {
+        if (settings.RateLimitRetryCount == 0)
+        {
+            return Policy.NoOpAsync<TResponse>();
+        }
+
+        return Policy<TResponse>
+            .HandleResult(r => r.StatusCode == HttpStatusCode.TooManyRequests)
             .WaitAndRetryAsync(
-                retryCount: GetMaxRetryCount(settings),
+                retryCount: settings.RateLimitRetryCount,
                 sleepDurationProvider: (retryCount, response, context) =>
-                    GetRetryDelay(retryCount, response.Result, settings, logger),
+                    GetRateLimitDelay(response.Result, settings, logger),
                 onRetryAsync: async (response, timeSpan, retryCount, context) =>
                 {
                     logger.LogWarning(
-                        $"API request failed with status {response.Result.StatusCode}. " +
-                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
+                        $"{requestType} request rate limited (429). " +
+                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.RateLimitRetryCount}");
                     await Task.CompletedTask;
                 });
     }
 
-    private static bool ShouldRetry(RestResponseBase response, RetryPolicySettings settings)
-    {
-        return response.StatusCode switch
-        {
-            HttpStatusCode.TooManyRequests => true,
-            HttpStatusCode.ServiceUnavailable => settings.ServiceUnavailableRetryCount > 0,
-            _ when (int)response.StatusCode >= 500 => true,
-            _ when response.StatusCode == 0 => true, // Connection failure
-            _ => false
-        };
-    }
-
-    private static int GetMaxRetryCount(RetryPolicySettings settings)
-    {
-        return Math.Max(
-            settings.ServerErrorRetryCount,
-            Math.Max(settings.RateLimitRetryCount, settings.ServiceUnavailableRetryCount));
-    }
-
-    private static TimeSpan GetRetryDelay(
-        int retryCount,
-        RestResponseBase response,
+    private static IAsyncPolicy<TResponse> BuildServiceUnavailablePolicyCore<TResponse>(
         RetryPolicySettings settings,
-        ILogger logger)
+        ILogger logger,
+        string requestType)
+        where TResponse : RestResponseBase
     {
-        return response.StatusCode switch
+        if (settings.ServiceUnavailableRetryCount == 0)
         {
-            HttpStatusCode.TooManyRequests => GetRateLimitDelay(response, settings, logger),
-            HttpStatusCode.ServiceUnavailable => GetServiceUnavailableDelay(retryCount, settings),
-            _ when (int)response.StatusCode == 0 => GetServerErrorDelay(retryCount, settings),
-            _ => GetServerErrorDelay(retryCount, settings)
-        };
+            // Return a no-op policy if retries are disabled
+            return Policy.NoOpAsync<TResponse>();
+        }
+
+        return Policy<TResponse>
+            .HandleResult(r => r.StatusCode == HttpStatusCode.ServiceUnavailable)
+            .WaitAndRetryAsync(
+                retryCount: settings.ServiceUnavailableRetryCount,
+                sleepDurationProvider: (retryCount, response, context) =>
+                    TimeSpan.FromSeconds(settings.ServiceUnavailableDelaySeconds),
+                onRetryAsync: async (response, timeSpan, retryCount, context) =>
+                {
+                    logger.LogWarning(
+                        $"{requestType} request service unavailable (503). " +
+                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.ServiceUnavailableRetryCount}");
+                    await Task.CompletedTask;
+                });
+    }
+
+    private static IAsyncPolicy<TResponse> BuildServerErrorPolicyCore<TResponse>(
+        RetryPolicySettings settings,
+        ILogger logger,
+        string requestType)
+        where TResponse : RestResponseBase
+    {
+        if (settings.ServerErrorRetryCount == 0)
+        {
+            return Policy.NoOpAsync<TResponse>();
+        }
+
+        return Policy<TResponse>
+            .HandleResult(r => (int)r.StatusCode >= 500 || r.StatusCode == 0) 
+            .WaitAndRetryAsync(
+                retryCount: settings.ServerErrorRetryCount,
+                sleepDurationProvider: (retryCount, response, context) =>
+                    GetServerErrorDelay(retryCount, settings),
+                onRetryAsync: async (response, timeSpan, retryCount, context) =>
+                {
+                    var statusDescription = response.Result.StatusCode == 0 ? "connection failure" : $"server error ({response.Result.StatusCode})";
+                    logger.LogWarning(
+                        $"{requestType} request {statusDescription}. " +
+                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.ServerErrorRetryCount}");
+                    await Task.CompletedTask;
+                });
     }
 
     private static TimeSpan GetRateLimitDelay(
@@ -116,14 +151,10 @@ public static class RetryPolicyBuilder
         return TimeSpan.FromSeconds(settings.RateLimitDefaultDelaySeconds);
     }
 
-    private static TimeSpan GetServiceUnavailableDelay(int retryCount, RetryPolicySettings settings)
-    {
-        // For 503, use a fixed delay
-        return TimeSpan.FromSeconds(settings.ServiceUnavailableDelaySeconds);
-    }
-
     private static TimeSpan GetServerErrorDelay(int retryCount, RetryPolicySettings settings)
     {
+        // Exponential backoff for server errors (base * 2^retry)
+        // e.g., 200ms, 400ms, 800ms for retries 1, 2, 3
         return TimeSpan.FromMilliseconds(settings.ServerErrorBaseDelayMs * Math.Pow(2, retryCount));
     }
 }
