@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-12-11
+## [2.0.0] - 2025-12-11
+
+### Breaking Changes
+- **Constructor signature change**: `IRacingAuthenticator` now requires a `RetryPolicySettings` parameter. If you directly instantiate this class, update your code to pass retry settings.
+- **Dropped .NET 6 support**: Minimum supported framework is now .NET 8.0. .NET 6 reached end-of-life in November 2024.
 
 ### Added
 - Configurable retry policies via `RetryPolicySettings` class
@@ -13,14 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ServiceUnavailableException` for better error reporting when iRacing API is down
 - Centralized `RetryPolicyBuilder` for consistent retry behavior across all API calls
 - Retry policy configuration in `IRacingDataSettings.RetryPolicy`
+- .NET 10 support
 
 ### Changed
 - Refactored retry logic to use Polly policies consistently across authentication and API requests
 - Improved rate limit (429) handling with smart delay based on `X-RateLimit-Reset` header
 - HTTP 503 errors now default to fail immediately (0 retries) since they typically indicate long maintenance windows
 - Server error (5xx) retries now use exponential backoff
-- Added .NET 10 support
-- Removed .NET 6 support (EOL)
 
 ### Technical Details
 - Rate limit retries: Up to 3 attempts with smart delay based on reset header (default 15s fallback)
@@ -39,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project initialization
 - Basic API wrapper structure
 
-[1.1.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v1.0.2...v1.1.0
+[2.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v0.9.2...v1.0.2
 [0.9.2]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/releases/tag/v0.9.1
