@@ -84,6 +84,104 @@ To use the `IRacingApiService`, follow these steps:
    }
    ```
 
+## Retry Policy Configuration
+
+The wrapper includes configurable retry policies for handling transient failures and rate limiting:
+
+```json
+{
+    "IRacingDataSettings": {
+        "BaseUrl": "https://members-ng.iracing.com/",
+        "Username": "your_username",
+        "Password": "your_password",
+        "RetryPolicy": {
+            "ServerErrorRetryCount": 3,
+            "ServerErrorBaseDelayMs": 200,
+            "RateLimitRetryCount": 3,
+            "RateLimitDefaultDelaySeconds": 15,
+            "ServiceUnavailableRetryCount": 0,
+            "ServiceUnavailableDelaySeconds": 60
+        }
+    }
+}
+```
+
+**Retry Policy Settings:**
+- **ServerErrorRetryCount**: Number of retries for 5xx errors (default: 3)
+- **ServerErrorBaseDelayMs**: Base delay for exponential backoff on 5xx errors (default: 200ms)
+- **RateLimitRetryCount**: Number of retries for 429 errors (default: 3)
+- **RateLimitDefaultDelaySeconds**: Default delay when rate limit reset header is not present (default: 15s)
+- **ServiceUnavailableRetryCount**: Number of retries for 503 errors (default: 0, since iRacing maintenance can last hours)
+- **ServiceUnavailableDelaySeconds**: Delay between 503 retries if enabled (default: 60s)
+
+## Exception Handling
+
+The wrapper throws specific exceptions that you should handle in your application:
+
+### ServiceUnavailableException
+
+Thrown when the iRacing API returns HTTP 503 (Service Unavailable), typically during scheduled maintenance.
+
+```csharp
+try
+{
+    var cars = await _racingApiService.GetCars();
+}
+catch (ServiceUnavailableException ex)
+{
+    // iRacing is down for maintenance
+    _logger.LogWarning("iRacing service is currently unavailable: {Message}", ex.Message);
+    // Consider implementing a retry mechanism or notifying users
+}
+```
+
+### ErrorResponseException
+
+Thrown when the API returns an error response. Contains detailed error information including the HTTP status code.
+
+```csharp
+try
+{
+    var results = await _racingApiService.GetResults(subSessionId, includeLicenses: true);
+}
+catch (ErrorResponseException ex)
+{
+    _logger.LogError("API error ({StatusCode}): {Error} - {Message}",
+        ex.ResultCode, ex.Error, ex.Message);
+
+    // Check specific status codes
+    if (ex.ResultCode == HttpStatusCode.Unauthorized)
+    {
+        // Handle authentication errors
+    }
+    else if (ex.ResultCode == HttpStatusCode.NotFound)
+    {
+        // Handle resource not found
+    }
+}
+```
+
+**Properties:**
+- `ResultCode` (HttpStatusCode): The HTTP status code returned by the API
+- `Error` (string): The error code or type from the API response
+- `Message` (string): The error message describing what went wrong
+
+### HttpRequestException
+
+May be thrown for network-related issues or authentication failures.
+
+```csharp
+try
+{
+    var memberInfo = await _racingApiService.GetMemberInfo();
+}
+catch (HttpRequestException ex)
+{
+    _logger.LogError("Request failed: {Message}", ex.Message);
+    // Handle network errors or authentication failures
+}
+```
+
 ## Test Project
 
 There is a test project called TestWrapper that shows how to set this up in a console app.
