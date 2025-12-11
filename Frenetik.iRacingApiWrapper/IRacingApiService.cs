@@ -6,9 +6,9 @@ using Frenetik.iRacingApiWrapper.Service;
 using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 using Polly.Retry;
 using RestSharp;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 
@@ -22,6 +22,7 @@ public class IRacingApiService
     private readonly IRacingDataSettings _settings;
     private readonly IRacingAuthenticator _authenticator;
     private readonly ILogger<IRacingApiService> _logger;
+    private readonly ConcurrentDictionary<Type, object> _policyCache = new();
 
     private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
 
@@ -626,6 +627,13 @@ public class IRacingApiService
         }
     }
 
+    private AsyncRetryPolicy<RestResponse<T>> GetCachedPolicy<T>()
+    {
+        return (AsyncRetryPolicy<RestResponse<T>>)_policyCache.GetOrAdd(
+            typeof(T),
+            _ => RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger));
+    }
+
     private async Task<List<T>> GetAssets<T>(string baseUrl, List<string> assets)
     {
         if (assets.Count == 0)
@@ -633,7 +641,7 @@ public class IRacingApiService
             return new List<T>();
         }
 
-        var policy = RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger);
+        var policy = GetCachedPolicy<T>();
         var client = GetClient(baseUrl);
         var results = new List<T>();
         _logger.LogInformation($"Getting {assets.Count} assets from {baseUrl}");
@@ -662,7 +670,7 @@ public class IRacingApiService
 
     private async Task<T> GetBaseResource<T>(RestClient client, RestRequest request)
     {
-        var policy = RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger);
+        var policy = GetCachedPolicy<T>();
         var response = await policy.ExecuteAsync(() => client.ExecuteAsync<T>(request));
 
         if (response.IsSuccessful && response.Data != null)

@@ -1,7 +1,6 @@
 ﻿using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
-using Polly;
 using Polly.Retry;
 using RestSharp;
 using RestSharp.Authenticators;

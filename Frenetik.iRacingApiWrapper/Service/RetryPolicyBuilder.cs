@@ -70,7 +70,6 @@ public static class RetryPolicyBuilder
 
     private static int GetMaxRetryCount(RetryPolicySettings settings)
     {
-        // Return the maximum of all retry counts since the policy handles multiple error types
         return Math.Max(
             settings.ServerErrorRetryCount,
             Math.Max(settings.RateLimitRetryCount, settings.ServiceUnavailableRetryCount));
@@ -86,6 +85,7 @@ public static class RetryPolicyBuilder
         {
             HttpStatusCode.TooManyRequests => GetRateLimitDelay(response, settings, logger),
             HttpStatusCode.ServiceUnavailable => GetServiceUnavailableDelay(retryCount, settings),
+            _ when (int)response.StatusCode == 0 => GetServerErrorDelay(retryCount, settings), // Connection failure (StatusCode == 0)
             _ => GetServerErrorDelay(retryCount, settings)
         };
     }
@@ -124,7 +124,6 @@ public static class RetryPolicyBuilder
 
     private static TimeSpan GetServerErrorDelay(int retryCount, RetryPolicySettings settings)
     {
-        // Exponential backoff for server errors
-        return TimeSpan.FromMilliseconds(Math.Pow(settings.ServerErrorBaseDelayMs, retryCount));
+        return TimeSpan.FromMilliseconds(settings.ServerErrorBaseDelayMs * Math.Pow(2, retryCount));
     }
 }
