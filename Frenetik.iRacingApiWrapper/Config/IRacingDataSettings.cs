@@ -19,4 +19,9 @@ public class IRacingDataSettings
     /// Member Password
     /// </summary>
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Retry policy configuration for API requests
+    /// </summary>
+    public RetryPolicySettings RetryPolicy { get; set; } = new RetryPolicySettings();
 }
