@@ -37,4 +37,29 @@ public class RetryPolicySettings
     /// Only applies if ServiceUnavailableRetryCount > 0.
     /// </summary>
     public int ServiceUnavailableDelaySeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Validates the retry policy settings to ensure they won't cause downstream exceptions
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when settings are invalid</exception>
+    public void Validate()
+    {
+        if (ServerErrorRetryCount < 0)
+            throw new ArgumentException("ServerErrorRetryCount must be non-negative", nameof(ServerErrorRetryCount));
+
+        if (ServerErrorBaseDelayMs <= 0)
+            throw new ArgumentException("ServerErrorBaseDelayMs must be positive", nameof(ServerErrorBaseDelayMs));
+
+        if (RateLimitRetryCount < 0)
+            throw new ArgumentException("RateLimitRetryCount must be non-negative", nameof(RateLimitRetryCount));
+
+        if (RateLimitDefaultDelaySeconds <= 0)
+            throw new ArgumentException("RateLimitDefaultDelaySeconds must be positive", nameof(RateLimitDefaultDelaySeconds));
+
+        if (ServiceUnavailableRetryCount < 0)
+            throw new ArgumentException("ServiceUnavailableRetryCount must be non-negative", nameof(ServiceUnavailableRetryCount));
+
+        if (ServiceUnavailableDelaySeconds <= 0)
+            throw new ArgumentException("ServiceUnavailableDelaySeconds must be positive", nameof(ServiceUnavailableDelaySeconds));
+    }
 }
