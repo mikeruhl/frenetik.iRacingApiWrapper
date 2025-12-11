@@ -85,7 +85,7 @@ public static class RetryPolicyBuilder
         {
             HttpStatusCode.TooManyRequests => GetRateLimitDelay(response, settings, logger),
             HttpStatusCode.ServiceUnavailable => GetServiceUnavailableDelay(retryCount, settings),
-            _ when (int)response.StatusCode == 0 => GetServerErrorDelay(retryCount, settings), // Connection failure (StatusCode == 0)
+            _ when (int)response.StatusCode == 0 => GetServerErrorDelay(retryCount, settings),
             _ => GetServerErrorDelay(retryCount, settings)
         };
     }
