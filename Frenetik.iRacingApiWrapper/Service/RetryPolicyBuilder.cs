@@ -1,5 +1,4 @@
 using Frenetik.iRacingApiWrapper.Config;
-using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
@@ -21,20 +20,16 @@ public static class RetryPolicyBuilder
         ILogger logger)
     {
         return Policy<RestResponse>
-            .Handle<HttpRequestException>()
-            .OrResult(r => ShouldRetry(r, settings))
+            .HandleResult(r => ShouldRetry(r, settings))
             .WaitAndRetryAsync(
                 retryCount: GetMaxRetryCount(settings),
                 sleepDurationProvider: (retryCount, response, context) =>
                     GetRetryDelay(retryCount, response.Result, settings, logger),
                 onRetryAsync: async (response, timeSpan, retryCount, context) =>
                 {
-                    if (response.Result != null)
-                    {
-                        logger.LogWarning(
-                            $"Authentication request failed with status {response.Result.StatusCode}. " +
-                            $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
-                    }
+                    logger.LogWarning(
+                        $"Authentication request failed with status {response.Result.StatusCode}. " +
+                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
                     await Task.CompletedTask;
                 });
     }
@@ -47,20 +42,16 @@ public static class RetryPolicyBuilder
         ILogger logger)
     {
         return Policy<RestResponse<T>>
-            .Handle<HttpRequestException>()
-            .OrResult(r => ShouldRetry(r, settings))
+            .HandleResult(r => ShouldRetry(r, settings))
             .WaitAndRetryAsync(
                 retryCount: GetMaxRetryCount(settings),
                 sleepDurationProvider: (retryCount, response, context) =>
                     GetRetryDelay(retryCount, response.Result, settings, logger),
                 onRetryAsync: async (response, timeSpan, retryCount, context) =>
                 {
-                    if (response.Result != null)
-                    {
-                        logger.LogWarning(
-                            $"API request failed with status {response.Result.StatusCode}. " +
-                            $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
-                    }
+                    logger.LogWarning(
+                        $"API request failed with status {response.Result.StatusCode}. " +
+                        $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}");
                     await Task.CompletedTask;
                 });
     }
@@ -135,17 +126,5 @@ public static class RetryPolicyBuilder
     {
         // Exponential backoff for server errors
         return TimeSpan.FromMilliseconds(Math.Pow(settings.ServerErrorBaseDelayMs, retryCount));
-    }
-
-    /// <summary>
-    /// Checks if the response should throw a ServiceUnavailableException
-    /// </summary>
-    public static void ThrowIfServiceUnavailable(RestResponseBase response)
-    {
-        if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
-        {
-            throw new ServiceUnavailableException(
-                "iRacing service is currently unavailable. Please try again later.");
-        }
     }
 }

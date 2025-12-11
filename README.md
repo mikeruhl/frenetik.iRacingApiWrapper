@@ -116,28 +116,11 @@ The wrapper includes configurable retry policies for handling transient failures
 
 ## Exception Handling
 
-The wrapper throws specific exceptions that you should handle in your application:
-
-### ServiceUnavailableException
-
-Thrown when the iRacing API returns HTTP 503 (Service Unavailable), typically during scheduled maintenance.
-
-```csharp
-try
-{
-    var cars = await _racingApiService.GetCars();
-}
-catch (ServiceUnavailableException ex)
-{
-    // iRacing is down for maintenance
-    _logger.LogWarning("iRacing service is currently unavailable: {Message}", ex.Message);
-    // Consider implementing a retry mechanism or notifying users
-}
-```
+The wrapper throws `ErrorResponseException` for all API-related errors, including authentication failures and API request errors. This provides consistent error handling across the entire library.
 
 ### ErrorResponseException
 
-Thrown when the API returns an error response. Contains detailed error information including the HTTP status code.
+Thrown when the API returns an error response during authentication or API requests. Contains detailed error information including the HTTP status code.
 
 ```csharp
 try
@@ -150,13 +133,27 @@ catch (ErrorResponseException ex)
         ex.ResultCode, ex.Error, ex.Message);
 
     // Check specific status codes
-    if (ex.ResultCode == HttpStatusCode.Unauthorized)
+    if (ex.ResultCode == HttpStatusCode.Unauthorized || ex.ResultCode == HttpStatusCode.Forbidden)
     {
-        // Handle authentication errors
+        // Handle authentication errors (wrong credentials)
+        // These are not retried - check your username/password
+        _logger.LogError("Authentication failed. Please check your credentials.");
     }
     else if (ex.ResultCode == HttpStatusCode.NotFound)
     {
         // Handle resource not found
+    }
+    else if (ex.ResultCode == HttpStatusCode.ServiceUnavailable)
+    {
+        // iRacing is down for maintenance (503)
+        // By default, no retries are attempted since maintenance can last hours
+        _logger.LogWarning("iRacing service is currently unavailable");
+        // Consider notifying users or scheduling a retry later
+    }
+    else if (ex.ResultCode == HttpStatusCode.TooManyRequests)
+    {
+        // Rate limited - already retried based on X-RateLimit-Reset header
+        _logger.LogWarning("Rate limit exceeded after retries");
     }
 }
 ```
@@ -166,21 +163,14 @@ catch (ErrorResponseException ex)
 - `Error` (string): The error code or type from the API response
 - `Message` (string): The error message describing what went wrong
 
-### HttpRequestException
-
-May be thrown for network-related issues or authentication failures.
-
-```csharp
-try
-{
-    var memberInfo = await _racingApiService.GetMemberInfo();
-}
-catch (HttpRequestException ex)
-{
-    _logger.LogError("Request failed: {Message}", ex.Message);
-    // Handle network errors or authentication failures
-}
-```
+**Common Status Codes:**
+- `400 Bad Request`: Invalid parameters
+- `401 Unauthorized`: Authentication failed (wrong credentials - not retried)
+- `403 Forbidden`: Access denied (not retried)
+- `404 Not Found`: Resource doesn't exist
+- `429 Too Many Requests`: Rate limited (automatically retried with smart delay)
+- `500 Internal Server Error`: Server error (automatically retried with exponential backoff)
+- `503 Service Unavailable`: Maintenance window (not retried by default since maintenance can last hours)
 
 ## Test Project
 

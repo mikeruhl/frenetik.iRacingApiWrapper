@@ -649,10 +649,6 @@ public class IRacingApiService
             }
             else
             {
-                // After all retries, check if it's a service unavailable error
-                RetryPolicyBuilder.ThrowIfServiceUnavailable(response);
-
-                // Otherwise throw generic error
                 if (response.Content != null)
                 {
                     var body = JsonSerializer.Deserialize<ErrorResponse>(response.Content);
@@ -675,10 +671,6 @@ public class IRacingApiService
         }
         else
         {
-            // After all retries, check if it's a service unavailable error
-            RetryPolicyBuilder.ThrowIfServiceUnavailable(response);
-
-            // Otherwise throw generic error
             if (response.Content != null)
             {
                 var body = JsonSerializer.Deserialize<ErrorResponse>(response.Content);

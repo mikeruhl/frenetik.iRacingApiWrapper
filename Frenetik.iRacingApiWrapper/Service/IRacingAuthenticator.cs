@@ -80,16 +80,14 @@ public class IRacingAuthenticator : IAuthenticator
         if (response.IsSuccessStatusCode && !response.Content!.Contains("\"authcode\":0") && response.Cookies != null)
         {
             _cookieContainer.Add(response.Cookies);
+            return;
         }
-        else
-        {
-            // After all retries, check if it's a service unavailable error
-            RetryPolicyBuilder.ThrowIfServiceUnavailable(response);
 
-            // Otherwise throw authentication error
-            var responseBody = response.Content;
-            throw new HttpRequestException("Unable to authenticate with iRacing");
-        }
+        // Authentication failed - throw ErrorResponseException for consistency
+        throw new ErrorResponseException(
+            response.StatusCode,
+            "AuthenticationFailed",
+            $"Unable to authenticate with iRacing. Status: {response.StatusCode}");
     }
 
     private string EncodeCredentials()

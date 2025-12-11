@@ -10,14 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes
 - **Constructor signature change**: `IRacingAuthenticator` now requires a `RetryPolicySettings` parameter. If you directly instantiate this class, update your code to pass retry settings.
 - **Dropped .NET 6 support**: Minimum supported framework is now .NET 8.0. .NET 6 reached end-of-life in November 2024.
+- **Exception handling**: Authentication failures now throw `ErrorResponseException` instead of `HttpRequestException`. Use `ex.ResultCode` to check specific status codes (401, 403, 429, 503, etc.).
 
 ### Added
 - Configurable retry policies via `RetryPolicySettings` class
-- Support for HTTP 503 (Service Unavailable) error handling
-- `ServiceUnavailableException` for better error reporting when iRacing API is down
+- Support for HTTP 503 (Service Unavailable) error handling with configurable retry behavior
 - Centralized `RetryPolicyBuilder` for consistent retry behavior across all API calls
 - Retry policy configuration in `IRacingDataSettings.RetryPolicy`
 - .NET 10 support
+- XML documentation for `ErrorResponseException`
 
 ### Changed
 - Refactored retry logic to use Polly policies consistently across authentication and API requests
