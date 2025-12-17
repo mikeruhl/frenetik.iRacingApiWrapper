@@ -21,68 +21,81 @@ There are periodic updates to the iRacing API and I do not know how to track the
 
 The `IRacingApiService` is a service for interfacing with the iRacing API. It uses authentication and logging mechanisms to provide a reliable and secure way to interact with iRacing data.
 
-## Enabling API Usage
+## Authentication
 
-iRacing adopted 2FA in 2024 and requires you to now opt-in to legacy authentication.
+iRacing uses OAuth 2.0 bearer token authentication. This library requires you to implement your own token provider using any OAuth library of your choice.
 
-1. Goto https://oauth.iracing.com/accountmanagement/security/
-2. At the bottom of the options, enable Legacy Authentication
+### 1. Implement ITokenProvider
 
-## Usage
+Create a class that implements `ITokenProvider` to supply bearer tokens:
 
-To use the `IRacingApiService`, follow these steps:
+```csharp
+using Frenetik.iRacingApiWrapper.Service;
 
-1. **Install necessary packages:**
+public class MyTokenProvider : ITokenProvider
+{
+    private string? _cachedToken;
+    private DateTime _tokenExpiry;
 
-   ```bash
-   dotnet add package Microsoft.Extensions.Options
-   dotnet add package Microsoft.Extensions.Logging
-   ```
+    public async Task<string> GetTokenAsync()
+    {
+        // Return cached token if still valid
+        if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry)
+        {
+            return _cachedToken;
+        }
 
-2. **Configure settings:**
+        // Use your preferred OAuth library to obtain a token
+        // For example, using ROPC (Password Limited) flow:
+        // var tokenResponse = await oauthClient.RequestPasswordTokenAsync(...);
+        // _cachedToken = tokenResponse.AccessToken;
+        // _tokenExpiry = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn - 60);
 
-   Create a configuration section in your `appsettings.json` file:
+        return _cachedToken;
+    }
+}
+```
 
-   ```json
-   {
-       "IRacingDataSettings": {
-           "BaseUrl": "https://members-ng.iracing.com/",
-           "Username": "your_username",
-           "Password": "your_password"
-       }
-   }
-   ```
+See iRacing's OAuth documentation for details:
+- [Auth Overview](https://oauth.iracing.com/oauth2/book/auth_overview.html)
+- [Authorization Code Flow](https://oauth.iracing.com/oauth2/book/authorize_endpoint.html)
+- [Password Limited Flow (ROPC)](https://oauth.iracing.com/oauth2/book/password_limited_flow.html)
 
-3. **Register services:**
+### 2. Register services
 
-   In your `Startup.cs` or `Program.cs` file, register the necessary services:
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register your token provider
+    services.AddSingleton<ITokenProvider, MyTokenProvider>();
 
-   ```csharp
-   public void ConfigureServices(IServiceCollection services)
-   {
-       services.Configure<IRacingDataSettings>(Configuration.GetSection("IRacingDataSettings"));
-       services.AddSingleton<IRacingApiService>();
-       services.AddLogging();
-   }
-   ```
+    // Register the API service
+    services.AddSingleton<IRacingApiService>(sp =>
+    {
+        var tokenProvider = sp.GetRequiredService<ITokenProvider>();
+        var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
+        return new IRacingApiService(tokenProvider, logger);
+    });
 
-4. **Use the service:**
+    services.AddLogging();
+}
+```
 
-   Inject and use the `IRacingApiService` in your application:
+### 3. Use the service
 
-   ```csharp
-   public class RacingController : ControllerBase
-   {
-       private readonly IRacingApiService _racingApiService;
+```csharp
+public class RacingController : ControllerBase
+{
+    private readonly IRacingApiService _racingApiService;
 
-       public RacingController(IRacingApiService racingApiService)
-       {
-           _racingApiService = racingApiService;
-       }
+    public RacingController(IRacingApiService racingApiService)
+    {
+        _racingApiService = racingApiService;
+    }
 
-       // Your actions using IRacingApiService
-   }
-   ```
+    // Your actions using IRacingApiService
+}
+```
 
 ## Test Project
 

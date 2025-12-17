@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using RestSharp;
+using RestSharp.Authenticators;
 using System.Globalization;
 using System.Text.Json;
 
@@ -19,20 +20,37 @@ namespace Frenetik.iRacingApiWrapper;
 public class IRacingApiService
 {
     private readonly IRacingDataSettings _settings;
-    private readonly IRacingAuthenticator _authenticator;
+    private readonly IAuthenticator _authenticator;
     private readonly ILogger<IRacingApiService> _logger;
 
     private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
 
     /// <summary>
-    /// Default Constructor
+    /// Constructor for bearer token authentication
     /// </summary>
-    /// <param name="settings"></param>
-    /// <param name="logger"></param>
-    public IRacingApiService(IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
+    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
+    /// <param name="logger">Logger instance</param>
+    /// <param name="baseUrl">Optional base URL override. Defaults to https://members-ng.iracing.com</param>
+    public IRacingApiService(ITokenProvider tokenProvider, ILogger<IRacingApiService> logger, string? baseUrl = null)
+    {
+        _settings = new IRacingDataSettings
+        {
+            BaseUrl = baseUrl ?? "https://members-ng.iracing.com"
+        };
+        _authenticator = new BearerTokenAuthenticator(tokenProvider);
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Constructor for bearer token authentication with custom settings
+    /// </summary>
+    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
+    /// <param name="settings">iRacing API settings (only BaseUrl is used)</param>
+    /// <param name="logger">Logger instance</param>
+    public IRacingApiService(ITokenProvider tokenProvider, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
     {
         _settings = settings.Value;
-        _authenticator = new IRacingAuthenticator(_settings.BaseUrl, _settings.Username, _settings.Password, logger);
+        _authenticator = new BearerTokenAuthenticator(tokenProvider);
         _logger = logger;
     }
 
