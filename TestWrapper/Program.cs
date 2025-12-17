@@ -1,22 +1,39 @@
 ﻿using Frenetik.iRacingApiWrapper;
+using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Service;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TestWrapper;
 
 internal class Program
 {
     private static async Task Main(string[] args)
     {
+        // Build configuration from appsettings.json and user secrets
+        var config = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddUserSecrets(typeof(Program).Assembly)
+            .Build();
+
         var services = new ServiceCollection();
 
-        services.AddLogging(builder => builder.AddConsole());
+        services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 
-        // Register your token provider as a singleton
-        // This allows the token provider to maintain state (cached tokens, etc.)
-        services.AddSingleton<ITokenProvider, SampleTokenProvider>();
+        // Configure the Password Limited token provider settings
+        services.Configure<PasswordLimitedTokenProviderSettings>(options =>
+        {
+            // Load from configuration
+            options.ClientId = config["OAuth:ClientId"] ?? string.Empty;
+            options.ClientSecret = config["OAuth:ClientSecret"] ?? string.Empty;
+            options.Username = config["OAuth:Username"] ?? string.Empty;
+            options.Password = config["OAuth:Password"] ?? string.Empty;
+            options.Scope = config["OAuth:Scope"] ?? "iracing.auth";
+        });
 
-        // Register the API service with token-based auth
+        // Register the PasswordLimitedTokenProvider as the ITokenProvider
+        services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+
+        // Register the API service
         services.AddSingleton<IRacingApiService>(sp =>
         {
             var tokenProvider = sp.GetRequiredService<ITokenProvider>();
@@ -28,7 +45,28 @@ internal class Program
         var apiService = provider.GetRequiredService<IRacingApiService>();
 
         // Use the API service
+        Console.WriteLine("Fetching series stats...");
         var results = await apiService.GetSeriesStats();
         Console.WriteLine($"Series count: {results.Count}");
     }
 }
+
+/*
+ * Configuration example for appsettings.json or user secrets:
+ *
+ * {
+ *   "OAuth": {
+ *     "ClientId": "your_client_id",
+ *     "ClientSecret": "your_client_secret",
+ *     "Username": "your.email@example.com",
+ *     "Password": "your_password",
+ *     "Scope": "iracing.auth"
+ *   }
+ * }
+ *
+ * To set user secrets (recommended for development):
+ * dotnet user-secrets set "OAuth:ClientId" "your_client_id"
+ * dotnet user-secrets set "OAuth:ClientSecret" "your_client_secret"
+ * dotnet user-secrets set "OAuth:Username" "your.email@example.com"
+ * dotnet user-secrets set "OAuth:Password" "your_password"
+ */
