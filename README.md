@@ -21,68 +21,149 @@ There are periodic updates to the iRacing API and I do not know how to track the
 
 The `IRacingApiService` is a service for interfacing with the iRacing API. It uses authentication and logging mechanisms to provide a reliable and secure way to interact with iRacing data.
 
-## Enabling API Usage
+## Authentication
 
-iRacing adopted 2FA in 2024 and requires you to now opt-in to legacy authentication.
+iRacing uses OAuth 2.0 bearer token authentication. This library provides a built-in `PasswordLimitedTokenProvider` for automated/headless applications, or you can implement your own custom token provider.
 
-1. Goto https://oauth.iracing.com/accountmanagement/security/
-2. At the bottom of the options, enable Legacy Authentication
+### Option 1: Using PasswordLimitedTokenProvider (Recommended for Automated Apps)
 
-## Usage
+The `PasswordLimitedTokenProvider` is ideal for automated/headless applications that run on behalf of a registered user. This uses iRacing's Password Limited OAuth grant flow.
 
-To use the `IRacingApiService`, follow these steps:
+> **Note:** This grant is limited to 3 registered users per client. Contact iRacing to register your client and users.
 
-1. **Install necessary packages:**
+#### 1. Configure OAuth Settings
 
-   ```bash
-   dotnet add package Microsoft.Extensions.Options
-   dotnet add package Microsoft.Extensions.Logging
-   ```
+Store your OAuth credentials securely using user secrets (recommended) or appsettings.json:
 
-2. **Configure settings:**
+**Using User Secrets (Recommended for Development):**
+```bash
+dotnet user-secrets set "OAuth:ClientId" "your_client_id"
+dotnet user-secrets set "OAuth:ClientSecret" "your_client_secret"
+dotnet user-secrets set "OAuth:Username" "your.email@example.com"
+dotnet user-secrets set "OAuth:Password" "your_password"
+```
 
-   Create a configuration section in your `appsettings.json` file:
+**Or in appsettings.json:**
 
-   ```json
-   {
-       "IRacingDataSettings": {
-           "BaseUrl": "https://members-ng.iracing.com/",
-           "Username": "your_username",
-           "Password": "your_password"
-       }
-   }
-   ```
+> ⚠️ **WARNING**: Never commit credentials to source control! The example below is for reference only.
+> Always use User Secrets for development or secure configuration providers (Azure Key Vault, environment variables, etc.) for production.
 
-3. **Register services:**
+```json
+{
+  "OAuth": {
+    "ClientId": "your_client_id",           // DO NOT commit real values
+    "ClientSecret": "your_client_secret",   // DO NOT commit real values
+    "Username": "your.email@example.com",   // DO NOT commit real values
+    "Password": "your_password",            // DO NOT commit real values
+    "Scope": "iracing.auth"
+  }
+}
+```
 
-   In your `Startup.cs` or `Program.cs` file, register the necessary services:
+#### 2. Register Services
 
-   ```csharp
-   public void ConfigureServices(IServiceCollection services)
-   {
-       services.Configure<IRacingDataSettings>(Configuration.GetSection("IRacingDataSettings"));
-       services.AddSingleton<IRacingApiService>();
-       services.AddLogging();
-   }
-   ```
+```csharp
+using Frenetik.iRacingApiWrapper;
+using Frenetik.iRacingApiWrapper.Config;
+using Frenetik.iRacingApiWrapper.Service;
+using Microsoft.Extensions.DependencyInjection;
 
-4. **Use the service:**
+public void ConfigureServices(IServiceCollection services)
+{
+    // Configure the Password Limited token provider
+    services.Configure<PasswordLimitedTokenProviderSettings>(
+        Configuration.GetSection("OAuth"));
 
-   Inject and use the `IRacingApiService` in your application:
+    // Register the token provider
+    services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
 
-   ```csharp
-   public class RacingController : ControllerBase
-   {
-       private readonly IRacingApiService _racingApiService;
+    // Register the API service
+    services.AddSingleton<IRacingApiService>(sp =>
+    {
+        var tokenProvider = sp.GetRequiredService<ITokenProvider>();
+        var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
+        return new IRacingApiService(tokenProvider, logger);
+    });
 
-       public RacingController(IRacingApiService racingApiService)
-       {
-           _racingApiService = racingApiService;
-       }
+    services.AddLogging();
+}
+```
 
-       // Your actions using IRacingApiService
-   }
-   ```
+#### 3. Use the Service
+
+```csharp
+public class RacingController : ControllerBase
+{
+    private readonly IRacingApiService _racingApiService;
+
+    public RacingController(IRacingApiService racingApiService)
+    {
+        _racingApiService = racingApiService;
+    }
+
+    public async Task<IActionResult> GetSeries()
+    {
+        var series = await _racingApiService.GetSeries();
+        return Ok(series);
+    }
+}
+```
+
+#### Features
+
+The `PasswordLimitedTokenProvider` automatically handles:
+- ✅ Secret masking using iRacing's SHA-256 algorithm
+- ✅ Token caching and expiration
+- ✅ Automatic token refresh using refresh tokens
+- ✅ Rate limit detection and error handling
+- ✅ Thread-safe token management
+
+### Option 2: Custom ITokenProvider Implementation
+
+For web applications with multiple users or custom OAuth flows, implement `ITokenProvider`:
+
+```csharp
+using Frenetik.iRacingApiWrapper.Service;
+
+public class MyTokenProvider : ITokenProvider
+{
+    private string? _cachedToken;
+    private DateTime _tokenExpiry;
+
+    public async Task<string> GetTokenAsync()
+    {
+        // Return cached token if still valid
+        if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiry)
+        {
+            return _cachedToken;
+        }
+
+        // Implement your OAuth flow here
+        // For Authorization Code flow, handle redirects and token exchange
+        // For other flows, use your preferred OAuth library
+
+        return _cachedToken;
+    }
+}
+```
+
+Then register your custom provider:
+
+```csharp
+services.AddSingleton<ITokenProvider, MyTokenProvider>();
+services.AddSingleton<IRacingApiService>(sp =>
+{
+    var tokenProvider = sp.GetRequiredService<ITokenProvider>();
+    var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
+    return new IRacingApiService(tokenProvider, logger);
+});
+```
+
+### Additional Resources
+
+- [iRacing OAuth Overview](https://oauth.iracing.com/oauth2/book/auth_overview.html)
+- [Password Limited Flow Documentation](https://oauth.iracing.com/oauth2/book/password_limited_flow.html)
+- [Authorization Code Flow](https://oauth.iracing.com/oauth2/book/authorize_endpoint.html)
 
 ## Retry Policy Configuration
 

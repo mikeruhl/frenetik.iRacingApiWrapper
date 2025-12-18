@@ -5,6 +5,75 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-12-17
+
+### Breaking Changes
+- **OAuth 2.0 Migration**: Replaced legacy cookie-based authentication with OAuth 2.0 Password Limited grant type
+  - `IRacingAuthenticator` (cookie-based) has been **removed** - use `BearerTokenAuthenticator` with `ITokenProvider` instead
+  - `IRacingApiService` constructor no longer accepts username/password directly - requires `ITokenProvider` instance
+  - Configuration changes: `IRacingDataSettings.Username` and `IRacingDataSettings.Password` properties **removed**
+- **Interface changes**: `ITokenProvider.GetTokenAsync()` now includes optional `CancellationToken` parameter
+- **Migration required**: See README for updated OAuth configuration examples using `PasswordLimitedTokenProviderSettings`
+
+### Added
+- `ITokenProvider` interface for flexible OAuth token management
+- `PasswordLimitedTokenProvider` - OAuth 2.0 Password Limited grant implementation with:
+  - Automatic token caching and refresh
+  - Proper resource disposal via `IDisposable`
+  - Input validation for required configuration
+  - Comprehensive error handling with detailed error messages
+  - Cancellation token support for async operations
+- `BearerTokenAuthenticator` for RestSharp OAuth integration
+- `PasswordLimitedTokenProviderSettings` configuration class
+- iRacing-specific secret masking algorithm (Base64-encoded SHA-256)
+- Comprehensive unit test coverage (31 tests) for OAuth token provider
+- CI/CD workflow with automated test execution
+- Security warnings in README about credential storage
+
+### Changed
+- Rate limiting detection now handles iRacing's specific implementation (400 + "unauthorized_client" + Retry-After header)
+- Polly retry policies updated to respect `Retry-After` header for rate limiting
+- Error messages now preserve full OAuth error response content for better debugging
+- Token expiry calculations handle edge cases (tokens with < 60 second lifetime)
+- JSON deserialization now case-insensitive for OAuth responses
+
+### Fixed
+- Resource leaks: `SemaphoreSlim` and `HttpClient` now properly disposed
+- Error content preservation: All OAuth failures now include detailed error information
+- Rate limit handling: Correctly interprets iRacing's 400 BadRequest as rate limiting (not authorization failure)
+- Token expiry edge cases: Tokens with very short lifetimes no longer cause negative expiry times
+
+### Technical Details
+- OAuth tokens cached with 60-second safety buffer before expiration
+- Automatic token refresh when access token expires but refresh token is still valid
+- Falls back to password grant if refresh token is expired or unavailable
+- Thread-safe token acquisition using `SemaphoreSlim`
+- Tracks `HttpClient` ownership to prevent disposal of injected instances
+
+### Migration Guide
+**Before (v2.x):**
+```csharp
+services.AddSingleton<IRacingApiService>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<IRacingDataSettings>>().Value;
+    return new IRacingApiService(settings.Username, settings.Password, settings);
+});
+```
+
+**After (v3.x):**
+```csharp
+services.Configure<PasswordLimitedTokenProviderSettings>(
+    Configuration.GetSection("OAuth"));
+services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+services.AddSingleton<IRacingApiService>(sp =>
+{
+    var tokenProvider = sp.GetRequiredService<ITokenProvider>();
+    return new IRacingApiService(tokenProvider);
+});
+```
+
+See README for complete setup instructions including user secrets configuration.
+
 ## [2.0.0] - 2025-12-11
 
 ### Breaking Changes
@@ -43,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project initialization
 - Basic API wrapper structure
 
+[3.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v0.9.2...v1.0.2
 [0.9.2]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v0.9.1...v0.9.2

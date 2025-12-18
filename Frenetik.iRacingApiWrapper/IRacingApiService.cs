@@ -7,8 +7,8 @@ using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using Polly.Retry;
 using RestSharp;
+using RestSharp.Authenticators;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
@@ -21,21 +21,38 @@ namespace Frenetik.iRacingApiWrapper;
 public class IRacingApiService
 {
     private readonly IRacingDataSettings _settings;
-    private readonly IRacingAuthenticator _authenticator;
+    private readonly IAuthenticator _authenticator;
     private readonly ILogger<IRacingApiService> _logger;
     private readonly ConcurrentDictionary<Type, object> _policyCache = new();
 
     private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
 
     /// <summary>
-    /// Default Constructor
+    /// Constructor for bearer token authentication
     /// </summary>
-    /// <param name="settings"></param>
-    /// <param name="logger"></param>
-    public IRacingApiService(IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
+    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
+    /// <param name="logger">Logger instance</param>
+    /// <param name="baseUrl">Optional base URL override. Defaults to https://members-ng.iracing.com</param>
+    public IRacingApiService(ITokenProvider tokenProvider, ILogger<IRacingApiService> logger, string? baseUrl = null)
+    {
+        _settings = new IRacingDataSettings
+        {
+            BaseUrl = baseUrl ?? "https://members-ng.iracing.com"
+        };
+        _authenticator = new BearerTokenAuthenticator(tokenProvider);
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Constructor for bearer token authentication with custom settings
+    /// </summary>
+    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
+    /// <param name="settings">iRacing API settings (only BaseUrl is used)</param>
+    /// <param name="logger">Logger instance</param>
+    public IRacingApiService(ITokenProvider tokenProvider, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
     {
         _settings = settings.Value;
-        _authenticator = new IRacingAuthenticator(_settings.BaseUrl, _settings.Username, _settings.Password, _settings.RetryPolicy, logger);
+        _authenticator = new BearerTokenAuthenticator(tokenProvider);
         _logger = logger;
     }
 
@@ -176,7 +193,7 @@ public class IRacingApiService
     public Task<LeagueSeasonStandingsResult> GetLeagueSeasonStandings(int leagueId, int seasonId, int? carClassId = null, int? carId = null) => GetResources<LeagueSeasonStandingsResult>($"/league/season_standings", true, BuildParameters(["league_id", "season_id", "car_class_id", "car_id"], [leagueId, seasonId, carClassId, carId]));
 
     /// <summary>
-    /// 
+    /// Get league season sessions
     /// </summary>
     /// <param name="leagueId">League Id</param>
     /// <param name="seasonId">Season Id</param>
@@ -290,7 +307,7 @@ public class IRacingApiService
     public Task<ResultsLapChartData> GetResultsLapChartData(int subSessionId, int simSessionNumber) => GetResources<ResultsLapChartData>($"/results/lap_chart_data", true, BuildParameters(["subsession_id", "simsession_number"], [subSessionId, simSessionNumber]));
 
     /// <summary>
-    /// 
+    /// Get lap data for a subsession
     /// </summary>
     /// <param name="subSessionId"></param>
     /// <param name="simSessionNumber">The main event is 0; the preceding event is -1, and so on.</param>
@@ -568,14 +585,14 @@ public class IRacingApiService
     /// </summary>
     /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
     /// <returns></returns>
-    public async Task<Dictionary<string, TrackDetailsResult>> GetTrackAssets() => await GetResources<Dictionary<string, TrackDetailsResult>>("/track/assets", true);
+    public Task<Dictionary<string, TrackDetailsResult>> GetTrackAssets() => GetResources<Dictionary<string, TrackDetailsResult>>("/track/assets", true);
 
     /// <summary>
     /// Get Tracks
     /// </summary>
     /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
     /// <returns></returns>
-    public async Task<List<TrackResult>> GetTracks() => await GetResources<List<TrackResult>>("/track/get", true);
+    public Task<List<TrackResult>> GetTracks() => GetResources<List<TrackResult>>("/track/get", true);
 
     /// <summary>
     /// Some responses have a chunk_info property which contains a base_download_url and a list of chunk_file_names.  This method will retrieve the chunked data and return it as a list of lists.

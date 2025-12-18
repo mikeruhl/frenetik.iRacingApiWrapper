@@ -57,18 +57,30 @@ public static class RetryPolicyBuilder
         }
 
         return Policy<TResponse>
-            .HandleResult(r => r.StatusCode == HttpStatusCode.TooManyRequests)
+            .HandleResult(r =>
+                r.StatusCode == HttpStatusCode.TooManyRequests || // Standard HTTP 429
+                (r.StatusCode == HttpStatusCode.BadRequest && IsUnauthorizedClientError(r))) // iRacing's rate limiting
             .WaitAndRetryAsync(
                 retryCount: settings.RateLimitRetryCount,
                 sleepDurationProvider: (retryCount, response, context) =>
                     GetRateLimitDelay(response.Result, settings, logger),
                 onRetryAsync: async (response, timeSpan, retryCount, context) =>
                 {
+                    var statusDesc = response.Result.StatusCode == HttpStatusCode.TooManyRequests
+                        ? "rate limited (429)"
+                        : "rate limited (400 unauthorized_client)";
                     logger.LogWarning(
-                        $"{requestType} request rate limited (429). " +
+                        $"{requestType} request {statusDesc}. " +
                         $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.RateLimitRetryCount}");
                     await Task.CompletedTask;
                 });
+    }
+
+    private static bool IsUnauthorizedClientError(RestResponseBase response)
+    {
+        // iRacing uses 400 + "unauthorized_client" to indicate rate limiting
+        var content = response.Content ?? string.Empty;
+        return content.Contains("unauthorized_client", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IAsyncPolicy<TResponse> BuildServiceUnavailablePolicyCore<TResponse>(
@@ -130,6 +142,31 @@ public static class RetryPolicyBuilder
         RetryPolicySettings settings,
         ILogger logger)
     {
+        // Check for Retry-After header (iRacing's rate limiting)
+        var retryAfterHeader = response.Headers?
+            .FirstOrDefault(h => h.Name != null &&
+                h.Name.Equals("Retry-After", StringComparison.OrdinalIgnoreCase));
+
+        if (retryAfterHeader?.Value?.ToString() is string retryAfterValue)
+        {
+            // Retry-After can be either a number of seconds or an HTTP date
+            if (int.TryParse(retryAfterValue, out var retryAfterSeconds))
+            {
+                logger.LogInformation($"Retry-After header found: {retryAfterSeconds} seconds");
+                return TimeSpan.FromSeconds(retryAfterSeconds);
+            }
+            else if (DateTimeOffset.TryParse(retryAfterValue, out var retryAfterDate))
+            {
+                var waitTime = retryAfterDate - DateTimeOffset.UtcNow;
+                if (waitTime > TimeSpan.Zero)
+                {
+                    logger.LogInformation($"Retry-After date found: {retryAfterDate:u}");
+                    return waitTime;
+                }
+            }
+        }
+
+        // Check for X-RateLimit-Reset header (alternative rate limit format)
         var resetHeader = response.Headers?
             .FirstOrDefault(h => h.Name != null &&
                 h.Name.Equals("X-RateLimit-Reset", StringComparison.OrdinalIgnoreCase));
@@ -142,12 +179,12 @@ public static class RetryPolicyBuilder
 
             if (waitTime > TimeSpan.Zero)
             {
-                logger.LogInformation($"Rate limit reset time found: {resetTimeUtc:u}");
+                logger.LogInformation($"X-RateLimit-Reset header found: {resetTimeUtc:u}");
                 return waitTime;
             }
         }
 
-        logger.LogInformation("No rate limit reset header found, using default delay");
+        logger.LogInformation("No rate limit headers found, using default delay");
         return TimeSpan.FromSeconds(settings.RateLimitDefaultDelaySeconds);
     }
 

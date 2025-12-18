@@ -1,7 +1,7 @@
 ﻿namespace Frenetik.iRacingApiWrapper.Config;
 
 /// <summary>
-/// Settings for connection to iRacing ResultsSearchSeriesData endpoints
+/// Settings for connection to iRacing API endpoints
 /// </summary>
 public class IRacingDataSettings
 {
