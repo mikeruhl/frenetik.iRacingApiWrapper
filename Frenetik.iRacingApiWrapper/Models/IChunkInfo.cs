@@ -1,6 +1,4 @@
-﻿using Frenetik.iRacingApiWrapper;
-
-namespace Frenetik.iRacingApiWrapper.Models;
+﻿namespace Frenetik.iRacingApiWrapper.Models;
 
 /// <summary>
 /// Interface for reponse objects that contain a ChunkInfo object

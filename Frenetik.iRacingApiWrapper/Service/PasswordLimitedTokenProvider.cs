@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Frenetik.iRacingApiWrapper.Service;
 
