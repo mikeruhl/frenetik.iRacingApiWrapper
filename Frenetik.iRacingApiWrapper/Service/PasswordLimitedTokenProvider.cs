@@ -192,15 +192,9 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
         {
             var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            // Check for rate limiting (HTTP 429 or specific error codes)
-            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-            {
-                var retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
-                throw new InvalidOperationException(
-                    $"Rate limit exceeded. Retry after {retryAfter} seconds. Error: {errorContent}");
-            }
-
-            // Check for unauthorized_client error (not authorized for this grant type)
+            // Check for rate limiting
+            // Per iRacing OAuth spec: Rate limiting returns 400 BadRequest with "unauthorized_client" error
+            // and a Retry-After header (differs from RFC 6749 which uses HTTP 429 for rate limiting)
             if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
                 string? errorCode = null;
@@ -225,9 +219,18 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
 
                 if (isUnauthorizedClient)
                 {
+                    var retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
                     throw new InvalidOperationException(
-                        $"Client is not authorized to use this grant type. Error: {errorContent}");
+                        $"Rate limit exceeded. Retry after {retryAfter} seconds. Error: {errorContent}");
                 }
+            }
+
+            // Check for standard HTTP 429 rate limiting as fallback
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                var retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
+                throw new InvalidOperationException(
+                    $"Rate limit exceeded. Retry after {retryAfter} seconds. Error: {errorContent}");
             }
 
             // Throw with detailed error message for all other failures

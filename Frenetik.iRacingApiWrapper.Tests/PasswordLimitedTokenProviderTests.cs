@@ -234,33 +234,36 @@ public class PasswordLimitedTokenProviderTests : IDisposable
     }
 
     [Fact]
-    public async Task GetTokenAsync_WithUnauthorizedClientError_ThrowsInvalidOperationException()
+    public async Task GetTokenAsync_WithUnauthorizedClientError_ThrowsRateLimitException()
     {
-        // Arrange
+        // Arrange - Per iRacing spec, 400 + "unauthorized_client" indicates rate limiting
         var errorResponse = new { error = "unauthorized_client" };
 
-        SetupHttpResponse(HttpStatusCode.BadRequest, JsonSerializer.Serialize(errorResponse));
+        SetupHttpResponse(HttpStatusCode.BadRequest, JsonSerializer.Serialize(errorResponse), retryAfterSeconds: 60);
 
         var options = Options.Create(_settings);
         using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetTokenAsync());
-        Assert.Contains("not authorized to use this grant type", ex.Message);
+        Assert.Contains("Rate limit exceeded", ex.Message);
+        Assert.Contains("60 seconds", ex.Message);
     }
 
     [Fact]
-    public async Task GetTokenAsync_WithUnauthorizedClientInPlainText_ThrowsInvalidOperationException()
+    public async Task GetTokenAsync_WithUnauthorizedClientInPlainText_ThrowsRateLimitException()
     {
         // Arrange - Test fallback to string matching when JSON parsing fails
-        SetupHttpResponse(HttpStatusCode.BadRequest, "Error: unauthorized_client - client not permitted");
+        // Per iRacing spec, 400 + "unauthorized_client" indicates rate limiting
+        SetupHttpResponse(HttpStatusCode.BadRequest, "Error: unauthorized_client - client not permitted", retryAfterSeconds: 30);
 
         var options = Options.Create(_settings);
         using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetTokenAsync());
-        Assert.Contains("not authorized to use this grant type", ex.Message);
+        Assert.Contains("Rate limit exceeded", ex.Message);
+        Assert.Contains("30 seconds", ex.Message);
     }
 
     [Fact]
