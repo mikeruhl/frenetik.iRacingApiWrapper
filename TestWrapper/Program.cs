@@ -46,8 +46,11 @@ internal class Program
 
         // Use the API service
         Console.WriteLine("Fetching series stats...");
-        var results = await apiService.GetSeriesStats();
-        Console.WriteLine($"Series count: {results.Count}");
+        var now = DateTime.UtcNow;
+        var then = DateTime.UtcNow.Subtract(TimeSpan.FromMinutes(30));
+        var results = await apiService.GetResultsSearchSeries(startRangeBegin: then, startRangeEnd: now);
+        var chunks = await apiService.GetChunkInfoData(results);
+        Console.WriteLine($"Series count: {chunks.Count}");
     }
 }
 

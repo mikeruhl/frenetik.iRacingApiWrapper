@@ -762,11 +762,14 @@ public class IRacingApiService
 
     private RestClient GetClient(string url)
     {
-        var options = new RestClientOptions(url)
-        {
-            Authenticator = _authenticator,
+        var options = new RestClientOptions(url);
 
-        };
+        // Only set authenticator for iRacing base URL, not for external URLs like AWS S3
+        if (url.StartsWith(_settings.BaseUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            options.Authenticator = _authenticator;
+        }
+
         return new RestClient(options);
     }
 

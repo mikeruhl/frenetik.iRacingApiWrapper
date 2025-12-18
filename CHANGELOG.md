@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2025-12-18
+
+### Fixed
+- Fixed `GetChunkInfoData` incorrectly including Authorization header when fetching chunk data from AWS S3
+  - Authorization headers are now only included for requests to the iRacing base URL
+  - External URLs (e.g., `https://scorpio-assets.s3.amazonaws.com`) no longer receive authentication headers
+
 ## [3.0.0] - 2025-12-17
 
 ### Breaking Changes
@@ -112,6 +119,7 @@ See README for complete setup instructions including user secrets configuration.
 - Project initialization
 - Basic API wrapper structure
 
+[3.0.1]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v1.0.2...v2.0.0
 [1.0.2]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v0.9.2...v1.0.2
