@@ -12,5 +12,6 @@ public interface IChunkInfo<T> where T : class
     /// <summary>
     /// Chunk Info
     /// </summary>
+    [JsonPropertyName("chunk_info")]
     public ChunkInfo ChunkInfo { get; }
 }
