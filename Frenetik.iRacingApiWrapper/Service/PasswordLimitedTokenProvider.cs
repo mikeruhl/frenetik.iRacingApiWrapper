@@ -13,16 +13,18 @@ namespace Frenetik.iRacingApiWrapper.Service;
 /// This grant is intended for automated/headless clients that run on behalf of a registered user.
 /// Should be used once at startup, then refresh tokens should be used to maintain access.
 /// </summary>
-public class PasswordLimitedTokenProvider : ITokenProvider
+public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
 {
     private readonly PasswordLimitedTokenProviderSettings _settings;
     private readonly ILogger<PasswordLimitedTokenProvider> _logger;
     private readonly HttpClient _httpClient;
+    private readonly bool _disposeHttpClient;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     private TokenResponse? _cachedTokenResponse;
     private DateTime _tokenExpiry = DateTime.MinValue;
     private DateTime _refreshTokenExpiry = DateTime.MinValue;
+    private bool _disposed;
 
     /// <summary>
     /// Constructor for PasswordLimitedTokenProvider
@@ -35,18 +37,61 @@ public class PasswordLimitedTokenProvider : ITokenProvider
         ILogger<PasswordLimitedTokenProvider> logger,
         HttpClient? httpClient = null)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _settings = settings.Value;
+        ValidateSettings(_settings);
+
         _logger = logger;
-        _httpClient = httpClient ?? new HttpClient();
+
+        if (httpClient == null)
+        {
+            _httpClient = new HttpClient();
+            _disposeHttpClient = true;
+        }
+        else
+        {
+            _httpClient = httpClient;
+            _disposeHttpClient = false;
+        }
+    }
+
+    private static void ValidateSettings(PasswordLimitedTokenProviderSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        if (string.IsNullOrWhiteSpace(settings.ClientId))
+        {
+            throw new ArgumentException("ClientId is required and cannot be null or empty.", nameof(settings.ClientId));
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.ClientSecret))
+        {
+            throw new ArgumentException("ClientSecret is required and cannot be null or empty.", nameof(settings.ClientSecret));
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Username))
+        {
+            throw new ArgumentException("Username is required and cannot be null or empty.", nameof(settings.Username));
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Password))
+        {
+            throw new ArgumentException("Password is required and cannot be null or empty.", nameof(settings.Password));
+        }
     }
 
     /// <summary>
     /// Gets a valid bearer token, using cached token if available, refresh token if expired,
     /// or obtaining a new token via password grant
     /// </summary>
-    public async Task<string> GetTokenAsync()
+    /// <param name="cancellationToken">Token to observe while waiting to enter the semaphore.</param>
+    public async Task<string> GetTokenAsync(CancellationToken cancellationToken = default)
     {
-        await _semaphore.WaitAsync();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        await _semaphore.WaitAsync(cancellationToken);
         try
         {
             // Return cached access token if still valid
@@ -62,7 +107,7 @@ public class PasswordLimitedTokenProvider : ITokenProvider
                 _logger.LogInformation("Access token expired, attempting to refresh");
                 try
                 {
-                    await RefreshTokenAsync();
+                    await RefreshTokenAsync(cancellationToken);
                     return _cachedTokenResponse!.AccessToken;
                 }
                 catch (Exception ex)
@@ -73,7 +118,7 @@ public class PasswordLimitedTokenProvider : ITokenProvider
 
             // Obtain new token via password grant
             _logger.LogInformation("Obtaining new token via password limited grant");
-            await ObtainTokenViaPasswordGrantAsync();
+            await ObtainTokenViaPasswordGrantAsync(cancellationToken);
             return _cachedTokenResponse!.AccessToken;
         }
         finally
@@ -85,7 +130,7 @@ public class PasswordLimitedTokenProvider : ITokenProvider
     /// <summary>
     /// Obtains a new token using the password limited grant
     /// </summary>
-    private async Task ObtainTokenViaPasswordGrantAsync()
+    private async Task ObtainTokenViaPasswordGrantAsync(CancellationToken cancellationToken)
     {
         var maskedClientSecret = MaskSecret(_settings.ClientSecret, _settings.ClientId);
         var maskedPassword = MaskSecret(_settings.Password, _settings.Username);
@@ -104,13 +149,13 @@ public class PasswordLimitedTokenProvider : ITokenProvider
             formData["scope"] = _settings.Scope;
         }
 
-        await SendTokenRequestAsync(formData);
+        await SendTokenRequestAsync(formData, cancellationToken);
     }
 
     /// <summary>
     /// Refreshes the access token using the refresh token
     /// </summary>
-    private async Task RefreshTokenAsync()
+    private async Task RefreshTokenAsync(CancellationToken cancellationToken)
     {
         if (_cachedTokenResponse?.RefreshToken == null)
         {
@@ -127,35 +172,70 @@ public class PasswordLimitedTokenProvider : ITokenProvider
             { "refresh_token", _cachedTokenResponse.RefreshToken }
         };
 
-        await SendTokenRequestAsync(formData);
+        await SendTokenRequestAsync(formData, cancellationToken);
     }
 
     /// <summary>
     /// Sends the token request and processes the response
     /// </summary>
-    private async Task SendTokenRequestAsync(Dictionary<string, string> formData)
+    private async Task SendTokenRequestAsync(Dictionary<string, string> formData, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, _settings.TokenEndpoint)
         {
             Content = new FormUrlEncodedContent(formData)
         };
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        // Check for rate limiting
-        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        // If request failed, read error content for better error messages
+        if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            if (errorContent.Contains("unauthorized_client"))
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            // Check for rate limiting (HTTP 429 or specific error codes)
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
             {
                 var retryAfter = response.Headers.RetryAfter?.Delta?.TotalSeconds ?? 60;
                 throw new InvalidOperationException(
-                    $"Rate limit exceeded. Retry after {retryAfter} seconds. " +
-                    $"Error: {errorContent}");
+                    $"Rate limit exceeded. Retry after {retryAfter} seconds. Error: {errorContent}");
             }
-        }
 
-        response.EnsureSuccessStatusCode();
+            // Check for unauthorized_client error (not authorized for this grant type)
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                string? errorCode = null;
+                try
+                {
+                    using var doc = JsonDocument.Parse(errorContent);
+                    if (doc.RootElement.TryGetProperty("error", out var errorElement) &&
+                        errorElement.ValueKind == JsonValueKind.String)
+                    {
+                        errorCode = errorElement.GetString();
+                    }
+                }
+                catch (JsonException)
+                {
+                    // If error response is not valid JSON, fall back to string matching
+                }
+
+                var isUnauthorizedClient =
+                    (!string.IsNullOrEmpty(errorCode) &&
+                     string.Equals(errorCode, "unauthorized_client", StringComparison.OrdinalIgnoreCase)) ||
+                    errorContent.Contains("unauthorized_client", StringComparison.OrdinalIgnoreCase);
+
+                if (isUnauthorizedClient)
+                {
+                    throw new InvalidOperationException(
+                        $"Client is not authorized to use this grant type. Error: {errorContent}");
+                }
+            }
+
+            // Throw with detailed error message for all other failures
+            throw new HttpRequestException(
+                $"OAuth token request failed with status {(int)response.StatusCode} {response.StatusCode}. Error: {errorContent}",
+                null,
+                response.StatusCode);
+        }
 
         // Log rate limit headers if present
         if (response.Headers.TryGetValues("RateLimit-Remaining", out var remainingValues))
@@ -164,20 +244,22 @@ public class PasswordLimitedTokenProvider : ITokenProvider
             _logger.LogDebug("Rate limit remaining: {Remaining}", remaining);
         }
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        _cachedTokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent);
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        _cachedTokenResponse = JsonSerializer.Deserialize<TokenResponse>(
+            responseContent,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
         if (_cachedTokenResponse == null)
         {
             throw new InvalidOperationException("Failed to deserialize token response");
         }
 
-        // Calculate expiry times with a 60-second buffer for safety
-        _tokenExpiry = DateTime.UtcNow.AddSeconds(_cachedTokenResponse.ExpiresIn - 60);
+        // Calculate expiry times with a 60-second buffer for safety (ensure non-negative)
+        _tokenExpiry = DateTime.UtcNow.AddSeconds(Math.Max(0, _cachedTokenResponse.ExpiresIn - 60));
 
         if (_cachedTokenResponse.RefreshTokenExpiresIn.HasValue)
         {
-            _refreshTokenExpiry = DateTime.UtcNow.AddSeconds(_cachedTokenResponse.RefreshTokenExpiresIn.Value - 60);
+            _refreshTokenExpiry = DateTime.UtcNow.AddSeconds(Math.Max(0, _cachedTokenResponse.RefreshTokenExpiresIn.Value - 60));
         }
 
         _logger.LogInformation(
@@ -208,6 +290,26 @@ public class PasswordLimitedTokenProvider : ITokenProvider
 
         // Base64 encode the hash
         return Convert.ToBase64String(hash);
+    }
+
+    /// <summary>
+    /// Disposes of resources used by the token provider
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _semaphore.Dispose();
+
+        if (_disposeHttpClient)
+        {
+            _httpClient.Dispose();
+        }
+
+        _disposed = true;
     }
 
     /// <summary>

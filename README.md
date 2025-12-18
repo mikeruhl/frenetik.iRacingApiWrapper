@@ -44,13 +44,17 @@ dotnet user-secrets set "OAuth:Password" "your_password"
 ```
 
 **Or in appsettings.json:**
+
+> ⚠️ **WARNING**: Never commit credentials to source control! The example below is for reference only.
+> Always use User Secrets for development or secure configuration providers (Azure Key Vault, environment variables, etc.) for production.
+
 ```json
 {
   "OAuth": {
-    "ClientId": "your_client_id",
-    "ClientSecret": "your_client_secret",
-    "Username": "your.email@example.com",
-    "Password": "your_password",
+    "ClientId": "your_client_id",           // DO NOT commit real values
+    "ClientSecret": "your_client_secret",   // DO NOT commit real values
+    "Username": "your.email@example.com",   // DO NOT commit real values
+    "Password": "your_password",            // DO NOT commit real values
     "Scope": "iracing.auth"
   }
 }
