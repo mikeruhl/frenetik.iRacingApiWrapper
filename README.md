@@ -161,6 +161,94 @@ services.AddSingleton<IRacingApiService>(sp =>
 - [Password Limited Flow Documentation](https://oauth.iracing.com/oauth2/book/password_limited_flow.html)
 - [Authorization Code Flow](https://oauth.iracing.com/oauth2/book/authorize_endpoint.html)
 
+## Retry Policy Configuration
+
+The wrapper includes configurable retry policies for handling transient failures and rate limiting:
+
+```json
+{
+    "IRacingDataSettings": {
+        "BaseUrl": "https://members-ng.iracing.com/",
+        "Username": "your_username",
+        "Password": "your_password",
+        "RetryPolicy": {
+            "ServerErrorRetryCount": 3,
+            "ServerErrorBaseDelayMs": 200,
+            "RateLimitRetryCount": 3,
+            "RateLimitDefaultDelaySeconds": 15,
+            "ServiceUnavailableRetryCount": 0,
+            "ServiceUnavailableDelaySeconds": 60
+        }
+    }
+}
+```
+
+**Retry Policy Settings:**
+- **ServerErrorRetryCount**: Number of retries for 5xx errors (default: 3)
+- **ServerErrorBaseDelayMs**: Base delay for exponential backoff on 5xx errors (default: 200ms)
+- **RateLimitRetryCount**: Number of retries for 429 errors (default: 3)
+- **RateLimitDefaultDelaySeconds**: Default delay when rate limit reset header is not present (default: 15s)
+- **ServiceUnavailableRetryCount**: Number of retries for 503 errors (default: 0, since iRacing maintenance can last hours)
+- **ServiceUnavailableDelaySeconds**: Delay between 503 retries if enabled (default: 60s)
+
+## Exception Handling
+
+The wrapper throws `ErrorResponseException` for all API-related errors, including authentication failures and API request errors. This provides consistent error handling across the entire library.
+
+### ErrorResponseException
+
+Thrown when the API returns an error response during authentication or API requests. Contains detailed error information including the HTTP status code.
+
+```csharp
+try
+{
+    var results = await _racingApiService.GetResults(subSessionId, includeLicenses: true);
+}
+catch (ErrorResponseException ex)
+{
+    _logger.LogError("API error ({StatusCode}): {Error} - {Message}",
+        ex.ResultCode, ex.Error, ex.Message);
+
+    // Check specific status codes
+    if (ex.ResultCode == HttpStatusCode.Unauthorized || ex.ResultCode == HttpStatusCode.Forbidden)
+    {
+        // Handle authentication errors (wrong credentials)
+        // These are not retried - check your username/password
+        _logger.LogError("Authentication failed. Please check your credentials.");
+    }
+    else if (ex.ResultCode == HttpStatusCode.NotFound)
+    {
+        // Handle resource not found
+    }
+    else if (ex.ResultCode == HttpStatusCode.ServiceUnavailable)
+    {
+        // iRacing is down for maintenance (503)
+        // By default, no retries are attempted since maintenance can last hours
+        _logger.LogWarning("iRacing service is currently unavailable");
+        // Consider notifying users or scheduling a retry later
+    }
+    else if (ex.ResultCode == HttpStatusCode.TooManyRequests)
+    {
+        // Rate limited - already retried based on X-RateLimit-Reset header
+        _logger.LogWarning("Rate limit exceeded after retries");
+    }
+}
+```
+
+**Properties:**
+- `ResultCode` (HttpStatusCode): The HTTP status code returned by the API
+- `Error` (string): The error code or type from the API response
+- `Message` (string): The error message describing what went wrong
+
+**Common Status Codes:**
+- `400 Bad Request`: Invalid parameters
+- `401 Unauthorized`: Authentication failed (wrong credentials - not retried)
+- `403 Forbidden`: Access denied (not retried)
+- `404 Not Found`: Resource doesn't exist
+- `429 Too Many Requests`: Rate limited (automatically retried with smart delay)
+- `500 Internal Server Error`: Server error (automatically retried with exponential backoff)
+- `503 Service Unavailable`: Maintenance window (not retried by default since maintenance can last hours)
+
 ## Test Project
 
 There is a test project called TestWrapper that shows how to set this up in a console app.

@@ -3,16 +3,16 @@
 namespace Frenetik.iRacingApiWrapper.Exceptions;
 
 /// <summary>
-/// Exception thrown when the iRacing API returns an error response
+/// Exception thrown when the iRacing API returns an error response.
 /// </summary>
 public class ErrorResponseException : Exception
 {
     /// <summary>
-    /// Creates a new instance of ErrorResponseException
+    /// Initializes a new instance of the <see cref="ErrorResponseException"/> class.
     /// </summary>
-    /// <param name="resultCode">HTTP status code from the error response</param>
-    /// <param name="error">Error code from the API</param>
-    /// <param name="message">Error message from the API</param>
+    /// <param name="resultCode">The HTTP status code returned by the API</param>
+    /// <param name="error">The error code or type from the API response</param>
+    /// <param name="message">The error message describing what went wrong</param>
     public ErrorResponseException(HttpStatusCode resultCode, string error, string message) : base(message)
     {
         ResultCode = resultCode;
@@ -20,12 +20,12 @@ public class ErrorResponseException : Exception
     }
 
     /// <summary>
-    /// Error code from the API response
+    /// Gets the error code or type from the API response.
     /// </summary>
     public string Error { get; } = string.Empty;
 
     /// <summary>
-    /// HTTP status code from the response
+    /// Gets the HTTP status code returned by the API.
     /// </summary>
     public HttpStatusCode ResultCode { get; }
 }

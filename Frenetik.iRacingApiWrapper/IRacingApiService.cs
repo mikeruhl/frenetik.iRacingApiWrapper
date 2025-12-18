@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 
@@ -22,6 +23,7 @@ public class IRacingApiService
     private readonly IRacingDataSettings _settings;
     private readonly IAuthenticator _authenticator;
     private readonly ILogger<IRacingApiService> _logger;
+    private readonly ConcurrentDictionary<Type, object> _policyCache = new();
 
     private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
 
@@ -643,33 +645,33 @@ public class IRacingApiService
         }
     }
 
+    private IAsyncPolicy<RestResponse<T>> GetCachedPolicy<T>()
+    {
+        return (IAsyncPolicy<RestResponse<T>>)_policyCache.GetOrAdd(
+            typeof(T),
+            _ => RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger));
+    }
+
     private async Task<List<T>> GetAssets<T>(string baseUrl, List<string> assets)
     {
-        var polly = Policy.HandleResult<RestResponse<T>>(r => (int)r.StatusCode >= 500)
-    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(200, retryAttempt)), (result, timeSpan, retryCount, context) =>
-    {
-        _logger.LogWarning($"Request failed with status code {result.Result.StatusCode}. Waiting {timeSpan} before retrying. Retry attempt {retryCount}");
-    });
-
         if (assets.Count == 0)
         {
             return new List<T>();
         }
+
+        var policy = GetCachedPolicy<T>();
         var client = GetClient(baseUrl);
         var results = new List<T>();
         _logger.LogInformation($"Getting {assets.Count} assets from {baseUrl}");
+
         foreach (var asset in assets)
         {
             var request = new RestRequest(asset);
-            var response = await polly.ExecuteAsync(() => client.ExecuteAsync<T>(request));
+            var response = await policy.ExecuteAsync(() => client.ExecuteAsync<T>(request));
+
             if (response.IsSuccessful && response.Data != null)
             {
                 results.Add(response.Data);
-            }
-            else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-            {
-                var tooManyResponse = await RetryTooManyRequests(response, () => GetBaseResource<T>(client, request));
-                results.Add(tooManyResponse);
             }
             else
             {
@@ -686,22 +688,12 @@ public class IRacingApiService
 
     private async Task<T> GetBaseResource<T>(RestClient client, RestRequest request)
     {
-
-        var polly = Policy.HandleResult<RestResponse<T>>(r => (int)r.StatusCode >= 500 || r.StatusCode == 0)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(200, retryAttempt)), (result, timeSpan, retryCount, context) =>
-            {
-                _logger.LogWarning($"Request failed with status code {result.Result.StatusCode}. Waiting {timeSpan} before retrying. Retry attempt {retryCount}");
-            });
-
-        var response = await polly.ExecuteAsync(() => client.ExecuteAsync<T>(request));
+        var policy = GetCachedPolicy<T>();
+        var response = await policy.ExecuteAsync(() => client.ExecuteAsync<T>(request));
 
         if (response.IsSuccessful && response.Data != null)
         {
             return response.Data;
-        }
-        else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-        {
-            return await RetryTooManyRequests(response, () => GetBaseResource<T>(client, request));
         }
         else
         {
@@ -712,29 +704,6 @@ public class IRacingApiService
             }
             _logger.LogError($"Unexpected response from server: {response.StatusCode}");
             throw new ErrorResponseException(response.StatusCode, response.StatusCode.ToString(), "Unknown error");
-        }
-    }
-
-    private async Task<T> RetryTooManyRequests<T>(RestResponse<T> response, Func<Task<T>> nextRequest)
-    {
-        var resetTime = response.Headers?.FirstOrDefault(h => h.Name != null && h.Name.Equals("X-RateLimit-Reset", StringComparison.OrdinalIgnoreCase))?.Value?.ToString();
-        if (resetTime != null && int.TryParse(resetTime, out var resetTimeSeconds))
-        {
-            var resetTimeUtc = DateTimeOffset.FromUnixTimeSeconds(resetTimeSeconds);
-            var waitTime = resetTimeUtc - DateTimeOffset.UtcNow;
-            if (waitTime <= TimeSpan.FromSeconds(0))
-            {
-                waitTime = TimeSpan.FromSeconds(1);
-            }
-            _logger.LogInformation($"Rate limit exceeded. Waiting {waitTime} before retrying");
-            await Task.Delay(waitTime);
-            return await nextRequest();
-        }
-        else
-        {
-            _logger.LogInformation($"Rate limit exceeded but no rate limiting headers found. Waiting 15 seconds before retrying.");
-            await Task.Delay(15000);
-            return await nextRequest();
         }
     }
 
