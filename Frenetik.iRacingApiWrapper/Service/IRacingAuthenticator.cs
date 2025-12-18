@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Frenetik.iRacingApiWrapper.Config;
+using Frenetik.iRacingApiWrapper.Exceptions;
+using Microsoft.Extensions.Logging;
 using Polly;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -16,8 +18,8 @@ public class IRacingAuthenticator : IAuthenticator
     private readonly string _baseUrl;
     private readonly string _username;
     private readonly string _password;
-    private readonly ILogger<IRacingApiService> _logger;
     private readonly CookieContainer _cookieContainer;
+    private readonly IAsyncPolicy<RestResponse> _retryPolicy;
 
     /// <summary>
     /// Constructor for the IRacingAuthenticator
@@ -25,14 +27,15 @@ public class IRacingAuthenticator : IAuthenticator
     /// <param name="baseUrl">Api Base Url</param>
     /// <param name="username">iRacing Username</param>
     /// <param name="password">iRacing Password</param>
+    /// <param name="retrySettings">Retry policy settings</param>
     /// <param name="logger">Logger</param>
-    public IRacingAuthenticator(string baseUrl, string username, string password, ILogger<IRacingApiService> logger)
+    public IRacingAuthenticator(string baseUrl, string username, string password, RetryPolicySettings retrySettings, ILogger<IRacingApiService> logger)
     {
         _baseUrl = baseUrl;
         _username = username;
         _password = password;
-        _logger = logger;
         _cookieContainer = new CookieContainer();
+        _retryPolicy = RetryPolicyBuilder.BuildAuthenticationPolicy(retrySettings, logger);
     }
 
     /// <summary>
@@ -69,45 +72,19 @@ public class IRacingAuthenticator : IAuthenticator
         request.CookieContainer = _cookieContainer;
         request.AddJsonBody(new { email = _username, password = EncodeCredentials() });
 
-        var polly = Policy.HandleResult<RestResponse>(r => (int)r.StatusCode == (int)HttpStatusCode.TooManyRequests)
-            .WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(15 * (retry + 1)), HandleOnRetry);
-
-
-        var response = await polly.ExecuteAsync(() => client.ExecuteAsync(request));
+        var response = await _retryPolicy.ExecuteAsync(() => client.ExecuteAsync(request));
 
         if (response.IsSuccessStatusCode && !response.Content!.Contains("\"authcode\":0") && response.Cookies != null)
         {
             _cookieContainer.Add(response.Cookies);
+            return;
         }
-        else
-        {
-            var responseBody = response.Content;
-            throw new HttpRequestException("Unable to authenticate with iRacing");
-        }
-    }
 
-    private Task<TimeSpan> RetryTooManyRequests(int retryCount, DelegateResult<RestResponse> response, Context context)
-    {
-        var resetTime = response.Result.Headers?.FirstOrDefault(h => h.Name != null && h.Name.Equals("X-RateLimit-Reset", StringComparison.OrdinalIgnoreCase))?.Value?.ToString();
-        if (resetTime != null)
-        {
-            var resetTimeSeconds = int.Parse(resetTime);
-            var resetTimeUtc = DateTimeOffset.FromUnixTimeSeconds(resetTimeSeconds);
-            var waitTime = resetTimeUtc - DateTimeOffset.UtcNow;
-            _logger.LogInformation($"Rate limit exceeded. Waiting {waitTime} before retrying");
-            return Task.FromResult(waitTime);
-        }
-        else
-        {
-            _logger.LogInformation($"Rate limit exceeded but no rate limiting headers found. Waiting 15 seconds before retrying.");
-            return Task.FromResult(TimeSpan.FromSeconds(15));
-        }
-    }
-
-    private Task HandleOnRetry(DelegateResult<RestResponse> response, TimeSpan timeSpan)
-    {
-        _logger.LogInformation($"Rate limit exceeded. Waiting {timeSpan} before retrying.");
-        return Task.CompletedTask;
+        // Authentication failed - throw ErrorResponseException for consistency
+        throw new ErrorResponseException(
+            response.StatusCode,
+            "AuthenticationFailed",
+            $"Unable to authenticate with iRacing. Status: {response.StatusCode}");
     }
 
     private string EncodeCredentials()
