@@ -25,11 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - HTTP client implementation migrated from RestSharp to native `HttpClient` with `IHttpClientFactory`
 - Better error handling with improved error messages from API responses
+- Rate limit detection now uses `Retry-After` header instead of response body parsing
+  - Eliminates unnecessary response buffering for better memory efficiency
+  - Removes sync-over-async code for cleaner implementation
+  - Based on iRacing's documented behavior: 400 BadRequest + Retry-After header for rate limiting
 
 ### Fixed
 - Unbounded parallelism in `GetAssets` method that could cause connection pool exhaustion when downloading many assets
-- Response buffering to support retry policy synchronous reads
 - Proper disposal of HTTP responses in retry policies to prevent resource leaks
+- Memory usage by eliminating response buffering in retry predicates
 
 ### Migration Guide
 

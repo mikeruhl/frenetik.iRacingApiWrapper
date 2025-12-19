@@ -41,7 +41,7 @@ public static class RetryPolicyBuilder
         return Policy<HttpResponseMessage>
             .HandleResult(r =>
                 r.StatusCode == HttpStatusCode.TooManyRequests || // Standard HTTP 429
-                (r.StatusCode == HttpStatusCode.BadRequest && IsUnauthorizedClientError(r))) // iRacing's rate limiting
+                (r.StatusCode == HttpStatusCode.BadRequest && IsUnauthorizedClientError(r))) // iRacing's 400 + Retry-After
             .WaitAndRetryAsync(
                 retryCount: settings.RateLimitRetryCount,
                 sleepDurationProvider: (retryCount, response, context) =>
@@ -50,7 +50,7 @@ public static class RetryPolicyBuilder
                 {
                     var statusDesc = response.Result.StatusCode == HttpStatusCode.TooManyRequests
                         ? "rate limited (429)"
-                        : "rate limited (400 unauthorized_client)";
+                        : "rate limited (400 + Retry-After)";
                     logger.LogWarning(
                         $"{requestType} request {statusDesc}. " +
                         $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.RateLimitRetryCount}");
@@ -63,10 +63,11 @@ public static class RetryPolicyBuilder
 
     private static bool IsUnauthorizedClientError(HttpResponseMessage response)
     {
-        // iRacing uses 400 + "unauthorized_client" to indicate rate limiting
-        // Content is buffered before retry policy evaluation, so synchronous read is safe
-        var content = response.Content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        return content.Contains("unauthorized_client", StringComparison.OrdinalIgnoreCase);
+        // iRacing uses 400 BadRequest + Retry-After header to indicate rate limiting
+        // Per iRacing docs: https://oauth.iracing.com/oauth2/book/token_endpoint.html
+        // "If the client exceeds the rate limit, the server will respond with a 400 Bad Request
+        // status code, an unauthorized_client error, and a Retry-After header"
+        return response.Headers.RetryAfter != null;
     }
 
     private static IAsyncPolicy<HttpResponseMessage> BuildServiceUnavailablePolicyCore(

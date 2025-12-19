@@ -662,10 +662,7 @@ public class IRacingApiService
 
         using var response = await _retryPolicy.ExecuteAsync(async () =>
         {
-            var resp = await httpClient.GetAsync(url);
-            // Buffer the content so it can be read multiple times synchronously in retry predicates
-            await resp.Content.LoadIntoBufferAsync();
-            return resp;
+            return await httpClient.GetAsync(url);
         });
 
         if (!response.IsSuccessStatusCode)
