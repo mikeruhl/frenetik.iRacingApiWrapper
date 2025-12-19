@@ -14,4 +14,11 @@ public class IRacingDataSettings
     /// Retry policy configuration for API requests
     /// </summary>
     public RetryPolicySettings RetryPolicy { get; set; } = new RetryPolicySettings();
+
+    /// <summary>
+    /// Maximum number of parallel asset requests when downloading multiple assets.
+    /// Prevents connection pool exhaustion and rate limiting when fetching many resources concurrently.
+    /// Default is 10.
+    /// </summary>
+    public int MaxParallelAssetRequests { get; set; } = 10;
 }

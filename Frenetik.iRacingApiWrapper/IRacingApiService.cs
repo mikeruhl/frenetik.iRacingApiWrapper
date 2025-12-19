@@ -636,10 +636,20 @@ public class IRacingApiService
 
         _logger.LogInformation($"Getting {assets.Count} assets from {baseUrl}");
 
+        using var semaphore = new SemaphoreSlim(_settings.MaxParallelAssetRequests);
+
         var tasks = assets.Select(async asset =>
         {
-            var url = $"{baseUrl.TrimEnd('/')}/{asset.TrimStart('/')}";
-            return await GetFromApi<T>(url);
+            await semaphore.WaitAsync();
+            try
+            {
+                var url = $"{baseUrl.TrimEnd('/')}/{asset.TrimStart('/')}";
+                return await GetFromApi<T>(url);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         });
 
         var results = await Task.WhenAll(tasks);
