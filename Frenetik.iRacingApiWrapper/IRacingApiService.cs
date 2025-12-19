@@ -7,11 +7,10 @@ using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using RestSharp;
-using RestSharp.Authenticators;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
+using System.Net.Http.Json;
 
 namespace Frenetik.iRacingApiWrapper;
 
@@ -20,40 +19,49 @@ namespace Frenetik.iRacingApiWrapper;
 /// </summary>
 public class IRacingApiService
 {
-    private readonly IRacingDataSettings _settings;
-    private readonly IAuthenticator _authenticator;
+    private readonly IRacingDataSettings _settings = new();
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<IRacingApiService> _logger;
-    private readonly ConcurrentDictionary<Type, object> _policyCache = new();
+    private readonly IAsyncPolicy<HttpResponseMessage> _retryPolicy;
 
     private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
 
     /// <summary>
-    /// Constructor for bearer token authentication
+    /// HTTP client name for all iRacing API requests
     /// </summary>
-    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
+    public const string HttpClientName = "IRacing";
+
+    /// <summary>
+    /// Constructor for IRacingApiService with default settings
+    /// </summary>
+    /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
     /// <param name="logger">Logger instance</param>
-    /// <param name="baseUrl">Optional base URL override. Defaults to https://members-ng.iracing.com</param>
-    public IRacingApiService(ITokenProvider tokenProvider, ILogger<IRacingApiService> logger, string? baseUrl = null)
+    public IRacingApiService(IHttpClientFactory httpClientFactory, ILogger<IRacingApiService> logger)
     {
-        _settings = new IRacingDataSettings
-        {
-            BaseUrl = baseUrl ?? "https://members-ng.iracing.com"
-        };
-        _authenticator = new BearerTokenAuthenticator(tokenProvider);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _retryPolicy = RetryPolicyBuilder.BuildPolicy(_settings.RetryPolicy, _logger);
     }
 
     /// <summary>
-    /// Constructor for bearer token authentication with custom settings
+    /// Constructor for IRacingApiService with custom settings (use this to override BaseUrl or retry policies)
     /// </summary>
-    /// <param name="tokenProvider">Token provider that supplies OAuth bearer tokens</param>
-    /// <param name="settings">iRacing API settings (only BaseUrl is used)</param>
+    /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
+    /// <param name="settings">iRacing API settings</param>
     /// <param name="logger">Logger instance</param>
-    public IRacingApiService(ITokenProvider tokenProvider, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
+    public IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
     {
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _settings = settings.Value;
-        _authenticator = new BearerTokenAuthenticator(tokenProvider);
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _retryPolicy = RetryPolicyBuilder.BuildPolicy(_settings.RetryPolicy, _logger);
     }
 
     /// <summary>
@@ -618,38 +626,21 @@ public class IRacingApiService
     }
 
     /// <summary>
-    /// Get a Member's Awards
+    /// Get resources from the iRacing API
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="path"></param>
-    /// <param name="followLink"></param>
-    /// <param name="parameters"></param>
-    /// <returns></returns>
     private async Task<T> GetResources<T>(string path, bool followLink, IEnumerable<KeyValuePair<string, string>>? parameters = null)
     {
-        var client = GetClient(_settings.BaseUrl);
-        var request = new RestRequest(GetCombinedPath(path));
-
-        AddPresentParameters(request, parameters);
+        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), parameters);
 
         if (!followLink)
         {
-            return await GetBaseResource<T>(client, request);
+            return await GetFromApi<T>(url);
         }
         else
         {
-            var link = await GetBaseResource<ResourceLink>(client, request);
-            var anonymousClient = GetAnonymousClient();
-            var baseRequest = new RestRequest(link.Link);
-            return await GetBaseResource<T>(anonymousClient, baseRequest);
+            var link = await GetFromApi<ResourceLink>(url);
+            return await GetFromApi<T>(link.Link);
         }
-    }
-
-    private IAsyncPolicy<RestResponse<T>> GetCachedPolicy<T>()
-    {
-        return (IAsyncPolicy<RestResponse<T>>)_policyCache.GetOrAdd(
-            typeof(T),
-            _ => RetryPolicyBuilder.BuildApiPolicy<T>(_settings.RetryPolicy, _logger));
     }
 
     private async Task<List<T>> GetAssets<T>(string baseUrl, List<string> assets)
@@ -659,52 +650,36 @@ public class IRacingApiService
             return new List<T>();
         }
 
-        var policy = GetCachedPolicy<T>();
-        var client = GetClient(baseUrl);
         var results = new List<T>();
         _logger.LogInformation($"Getting {assets.Count} assets from {baseUrl}");
 
         foreach (var asset in assets)
         {
-            var request = new RestRequest(asset);
-            var response = await policy.ExecuteAsync(() => client.ExecuteAsync<T>(request));
-
-            if (response.IsSuccessful && response.Data != null)
-            {
-                results.Add(response.Data);
-            }
-            else
-            {
-                if (response.Content != null)
-                {
-                    var body = JsonSerializer.Deserialize<ErrorResponse>(response.Content);
-                    throw new ErrorResponseException(response.StatusCode, body?.Error ?? response.StatusCode.ToString(), body?.Message ?? "Unknown error");
-                }
-                throw new ErrorResponseException(response.StatusCode, response.StatusCode.ToString(), "Unknown error");
-            }
+            var url = $"{baseUrl.TrimEnd('/')}/{asset.TrimStart('/')}";
+            var result = await GetFromApi<T>(url);
+            results.Add(result);
         }
         return results;
     }
 
-    private async Task<T> GetBaseResource<T>(RestClient client, RestRequest request)
+    private async Task<T> GetFromApi<T>(string url)
     {
-        var policy = GetCachedPolicy<T>();
-        var response = await policy.ExecuteAsync(() => client.ExecuteAsync<T>(request));
+        var httpClient = _httpClientFactory.CreateClient(HttpClientName);
 
-        if (response.IsSuccessful && response.Data != null)
+        var response = await _retryPolicy.ExecuteAsync(async () =>
         {
-            return response.Data;
-        }
-        else
+            return await httpClient.GetAsync(url);
+        });
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<T>();
+        if (result == null)
         {
-            if (response.Content != null)
-            {
-                var body = JsonSerializer.Deserialize<ErrorResponse>(response.Content);
-                throw new ErrorResponseException(response.StatusCode, body?.Error ?? response.StatusCode.ToString(), body?.Message ?? "Unknown error");
-            }
-            _logger.LogError($"Unexpected response from server: {response.StatusCode}");
-            throw new ErrorResponseException(response.StatusCode, response.StatusCode.ToString(), "Unknown error");
+            throw new InvalidOperationException($"Failed to deserialize response from {url}");
         }
+
+        return result;
     }
 
     private string GetCombinedPath(string path)
@@ -724,19 +699,6 @@ public class IRacingApiService
             return string.Empty;
         }
         return string.Join(',', values.Select(v => v?.ToString() ?? string.Empty).Where(v => !string.IsNullOrWhiteSpace(v)));
-    }
-
-    private void AddPresentParameters(RestRequest request, IEnumerable<KeyValuePair<string, string>>? parameters)
-    {
-        if (parameters == null)
-        {
-            return;
-        }
-
-        foreach (var parameter in parameters.Where(p => !string.IsNullOrWhiteSpace(p.Value)))
-        {
-            request.AddParameter(parameter.Key, parameter.Value);
-        }
     }
 
     private IEnumerable<KeyValuePair<string, string>> BuildParameters(string[] keys, object?[] values)
@@ -760,22 +722,20 @@ public class IRacingApiService
         return parameters;
     }
 
-    private RestClient GetClient(string url)
+    private static string BuildUrl(string baseUrl, string path, IEnumerable<KeyValuePair<string, string>>? parameters = null)
     {
-        var options = new RestClientOptions(url);
+        var url = $"{baseUrl.TrimEnd('/')}/{path.TrimStart('/')}";
 
-        // Only set authenticator for iRacing base URL, not for external URLs like AWS S3
-        if (url.StartsWith(_settings.BaseUrl, StringComparison.OrdinalIgnoreCase))
+        if (parameters == null || !parameters.Any())
         {
-            options.Authenticator = _authenticator;
+            return url;
         }
 
-        return new RestClient(options);
-    }
+        var queryString = string.Join("&", parameters
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+            .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
 
-    private RestClient GetAnonymousClient()
-    {
-        return new RestClient();
+        return string.IsNullOrEmpty(queryString) ? url : $"{url}?{queryString}";
     }
 
     private static List<T> CompressLists<T>(List<List<T>> listOfList)

@@ -19,10 +19,9 @@ internal class Program
 
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 
-        // Configure the Password Limited token provider settings
+        // Configure OAuth settings
         services.Configure<PasswordLimitedTokenProviderSettings>(options =>
         {
-            // Load from configuration
             options.ClientId = config["OAuth:ClientId"] ?? string.Empty;
             options.ClientSecret = config["OAuth:ClientSecret"] ?? string.Empty;
             options.Username = config["OAuth:Username"] ?? string.Empty;
@@ -30,16 +29,15 @@ internal class Program
             options.Scope = config["OAuth:Scope"] ?? "iracing.auth";
         });
 
-        // Register the PasswordLimitedTokenProvider as the ITokenProvider
-        services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+        // Register HTTP client
+        services.AddHttpClient(IRacingApiService.HttpClientName)
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
 
-        // Register the API service
-        services.AddSingleton<IRacingApiService>(sp =>
-        {
-            var tokenProvider = sp.GetRequiredService<ITokenProvider>();
-            var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
-            return new IRacingApiService(tokenProvider, logger);
-        });
+        // Register services
+        services.AddTransient<BearerTokenDelegatingHandler>();
+        services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+        services.AddSingleton<IRacingApiService>();
 
         var provider = services.BuildServiceProvider();
         var apiService = provider.GetRequiredService<IRacingApiService>();

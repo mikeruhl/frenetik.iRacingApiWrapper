@@ -9,13 +9,7 @@ This is a wrapper for the iRacing API service written in C#.  It is still early 
 
 ## Submitting Issues
 
-There are periodic updates to the iRacing API and I do not know how to track these updates.  If you encounter any issues or have suggestions for improvements, please submit them via the GitHub issue tracker.
-
-1. Go to the [Issues](https://github.com/mikeruhl/iRacingApiWrapper/issues) section of the repository.
-2. Click on the `New Issue` button.
-3. Provide a clear and descriptive title for your issue.
-4. Fill out the issue template with as much detail as possible, including steps to reproduce the issue, expected behavior, and any relevant screenshots or logs.
-5. Submit the issue.
+Please report issues or suggestions via the [GitHub issue tracker](https://github.com/mikeruhl/iRacingApiWrapper/issues). Include steps to reproduce, expected behavior, and any relevant logs.
 
 # IRacingApiService
 
@@ -51,10 +45,10 @@ dotnet user-secrets set "OAuth:Password" "your_password"
 ```json
 {
   "OAuth": {
-    "ClientId": "your_client_id",           // DO NOT commit real values
-    "ClientSecret": "your_client_secret",   // DO NOT commit real values
-    "Username": "your.email@example.com",   // DO NOT commit real values
-    "Password": "your_password",            // DO NOT commit real values
+    "ClientId": "your_client_id",
+    "ClientSecret": "your_client_secret",
+    "Username": "your.email@example.com",
+    "Password": "your_password",
     "Scope": "iracing.auth"
   }
 }
@@ -70,20 +64,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 public void ConfigureServices(IServiceCollection services)
 {
-    // Configure the Password Limited token provider
+    // Configure OAuth settings
     services.Configure<PasswordLimitedTokenProviderSettings>(
         Configuration.GetSection("OAuth"));
 
-    // Register the token provider
-    services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+    // Register HTTP client with authentication handler
+    services.AddHttpClient(IRacingApiService.HttpClientName)
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+        .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
 
-    // Register the API service
-    services.AddSingleton<IRacingApiService>(sp =>
-    {
-        var tokenProvider = sp.GetRequiredService<ITokenProvider>();
-        var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
-        return new IRacingApiService(tokenProvider, logger);
-    });
+    // Register services
+    services.AddTransient<BearerTokenDelegatingHandler>();
+    services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+    services.AddSingleton<IRacingApiService>();
 
     services.AddLogging();
 }
@@ -150,13 +143,15 @@ public class MyTokenProvider : ITokenProvider
 Then register your custom provider:
 
 ```csharp
+// Register HTTP client with authentication handler
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+
+// Register services with custom token provider
+services.AddTransient<BearerTokenDelegatingHandler>();
 services.AddSingleton<ITokenProvider, MyTokenProvider>();
-services.AddSingleton<IRacingApiService>(sp =>
-{
-    var tokenProvider = sp.GetRequiredService<ITokenProvider>();
-    var logger = sp.GetRequiredService<ILogger<IRacingApiService>>();
-    return new IRacingApiService(tokenProvider, logger);
-});
+services.AddSingleton<IRacingApiService>();
 ```
 
 ### Additional Resources
@@ -167,14 +162,28 @@ services.AddSingleton<IRacingApiService>(sp =>
 
 ## Retry Policy Configuration
 
-The wrapper includes configurable retry policies for handling transient failures and rate limiting:
+Configure retry behavior for transient failures and rate limiting:
+
+```csharp
+// Optional: Customize retry policies and base URL
+services.Configure<IRacingDataSettings>(options =>
+{
+    options.BaseUrl = "https://members-ng.iracing.com"; // Optional: override base URL
+    options.RetryPolicy.ServerErrorRetryCount = 3;
+    options.RetryPolicy.ServerErrorBaseDelayMs = 200;
+    options.RetryPolicy.RateLimitRetryCount = 3;
+    options.RetryPolicy.RateLimitDefaultDelaySeconds = 15;
+    options.RetryPolicy.ServiceUnavailableRetryCount = 0;
+    options.RetryPolicy.ServiceUnavailableDelaySeconds = 60;
+});
+```
+
+Or via appsettings.json:
 
 ```json
 {
     "IRacingDataSettings": {
-        "BaseUrl": "https://members-ng.iracing.com/",
-        "Username": "your_username",
-        "Password": "your_password",
+        "BaseUrl": "https://members-ng.iracing.com",
         "RetryPolicy": {
             "ServerErrorRetryCount": 3,
             "ServerErrorBaseDelayMs": 200,
@@ -197,11 +206,10 @@ The wrapper includes configurable retry policies for handling transient failures
 
 ## Exception Handling
 
-The wrapper throws `ErrorResponseException` for all API-related errors, including authentication failures and API request errors. This provides consistent error handling across the entire library.
-
-### ErrorResponseException
-
-Thrown when the API returns an error response during authentication or API requests. Contains detailed error information including the HTTP status code.
+The wrapper throws `ErrorResponseException` for all API-related errors. The exception includes:
+- `ResultCode` (HttpStatusCode): HTTP status code from the API
+- `Error` (string): Error code or type
+- `Message` (string): Detailed error message
 
 ```csharp
 try
@@ -213,52 +221,16 @@ catch (ErrorResponseException ex)
     _logger.LogError("API error ({StatusCode}): {Error} - {Message}",
         ex.ResultCode, ex.Error, ex.Message);
 
-    // Check specific status codes
-    if (ex.ResultCode == HttpStatusCode.Unauthorized || ex.ResultCode == HttpStatusCode.Forbidden)
+    // Handle specific cases as needed
+    if (ex.ResultCode == HttpStatusCode.ServiceUnavailable)
     {
-        // Handle authentication errors (wrong credentials)
-        // These are not retried - check your username/password
-        _logger.LogError("Authentication failed. Please check your credentials.");
-    }
-    else if (ex.ResultCode == HttpStatusCode.NotFound)
-    {
-        // Handle resource not found
-    }
-    else if (ex.ResultCode == HttpStatusCode.ServiceUnavailable)
-    {
-        // iRacing is down for maintenance (503)
-        // By default, no retries are attempted since maintenance can last hours
-        _logger.LogWarning("iRacing service is currently unavailable");
-        // Consider notifying users or scheduling a retry later
-    }
-    else if (ex.ResultCode == HttpStatusCode.TooManyRequests)
-    {
-        // Rate limited - already retried based on X-RateLimit-Reset header
-        _logger.LogWarning("Rate limit exceeded after retries");
+        // iRacing is down for maintenance
     }
 }
 ```
 
-**Properties:**
-- `ResultCode` (HttpStatusCode): The HTTP status code returned by the API
-- `Error` (string): The error code or type from the API response
-- `Message` (string): The error message describing what went wrong
-
-**Common Status Codes:**
-- `400 Bad Request`: Invalid parameters
-- `401 Unauthorized`: Authentication failed (wrong credentials - not retried)
-- `403 Forbidden`: Access denied (not retried)
-- `404 Not Found`: Resource doesn't exist
-- `429 Too Many Requests`: Rate limited (automatically retried with smart delay)
-- `500 Internal Server Error`: Server error (automatically retried with exponential backoff)
-- `503 Service Unavailable`: Maintenance window (not retried by default since maintenance can last hours)
-
-## Test Project
-
-There is a test project called TestWrapper that shows how to set this up in a console app.
-
-## Notes
-
-- Ensure you have the correct iRacing API credentials.
-- Handle exceptions and errors appropriately in your application.
-- Any suggestions on improving this project or the readme?  Submit an issue, thanks!
+**Automatic Retry Behavior:**
+- `401/403`: Not retried (authentication issues)
+- `429`: Retried with smart delay based on rate limit headers
+- `500-502`: Retried with exponential backoff
+- `503`: Not retried by default (maintenance can last hours)
