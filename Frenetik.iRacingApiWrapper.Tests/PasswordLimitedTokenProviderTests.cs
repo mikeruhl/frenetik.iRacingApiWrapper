@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Service;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -10,11 +11,12 @@ using Moq.Protected;
 
 namespace Frenetik.iRacingApiWrapper.Tests;
 
-public class PasswordLimitedTokenProviderTests : IDisposable
+public class PasswordLimitedTokenProviderTests
 {
     private readonly Mock<ILogger<PasswordLimitedTokenProvider>> _loggerMock;
     private readonly PasswordLimitedTokenProviderSettings _settings;
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
+    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly HttpClient _httpClient;
 
     public PasswordLimitedTokenProviderTests()
@@ -32,18 +34,18 @@ public class PasswordLimitedTokenProviderTests : IDisposable
 
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
-    }
 
-    public void Dispose()
-    {
-        _httpClient.Dispose();
+        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        _httpClientFactoryMock
+            .Setup(f => f.CreateClient(It.IsAny<string>()))
+            .Returns(_httpClient);
     }
 
     [Fact]
     public void Constructor_WithNullSettings_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new PasswordLimitedTokenProvider(null!, _loggerMock.Object, _httpClient));
+            new PasswordLimitedTokenProvider(null!, _loggerMock.Object, _httpClientFactoryMock.Object));
     }
 
     [Fact]
@@ -51,7 +53,15 @@ public class PasswordLimitedTokenProviderTests : IDisposable
     {
         var options = Options.Create(_settings);
         Assert.Throws<ArgumentNullException>(() =>
-            new PasswordLimitedTokenProvider(options, null!, _httpClient));
+            new PasswordLimitedTokenProvider(options, null!, _httpClientFactoryMock.Object));
+    }
+
+    [Fact]
+    public void Constructor_WithNullHttpClientFactory_ThrowsArgumentNullException()
+    {
+        var options = Options.Create(_settings);
+        Assert.Throws<ArgumentNullException>(() =>
+            new PasswordLimitedTokenProvider(options, _loggerMock.Object, null!));
     }
 
     [Theory]
@@ -73,7 +83,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
 
         var options = Options.Create(invalidSettings);
         var ex = Assert.Throws<ArgumentException>(() =>
-            new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient));
+            new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object));
 
         Assert.Contains(expectedParamName, ex.Message);
     }
@@ -94,7 +104,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(tokenResponse));
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token = await provider.GetTokenAsync();
@@ -120,7 +130,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(tokenResponse));
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token1 = await provider.GetTokenAsync();
@@ -174,7 +184,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
             });
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token1 = await provider.GetTokenAsync();
@@ -203,7 +213,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(tokenResponse));
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token = await provider.GetTokenAsync();
@@ -225,7 +235,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
             retryAfterSeconds: 60);
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetTokenAsync());
@@ -242,7 +252,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.BadRequest, JsonSerializer.Serialize(errorResponse), retryAfterSeconds: 60);
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetTokenAsync());
@@ -258,7 +268,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.BadRequest, "Error: unauthorized_client - client not permitted", retryAfterSeconds: 30);
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetTokenAsync());
@@ -275,7 +285,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.BadRequest, JsonSerializer.Serialize(errorResponse));
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<HttpRequestException>(() => provider.GetTokenAsync());
@@ -296,7 +306,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, tokenResponse);
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token = await provider.GetTokenAsync();
@@ -313,7 +323,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         cts.Cancel();
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -325,7 +335,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
     {
         // Arrange
         var options = Options.Create(_settings);
-        var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
         provider.Dispose();
 
         // Act & Assert
@@ -337,26 +347,13 @@ public class PasswordLimitedTokenProviderTests : IDisposable
     {
         // Arrange
         var options = Options.Create(_settings);
-        var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         provider.Dispose();
         provider.Dispose(); // Should not throw
     }
 
-    [Fact]
-    public void Dispose_WithProvidedHttpClient_DoesNotDisposeHttpClient()
-    {
-        // Arrange
-        var options = Options.Create(_settings);
-        var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
-
-        // Act
-        provider.Dispose();
-
-        // Assert - HttpClient should still be usable since it was provided externally
-        Assert.NotNull(_httpClient);
-    }
 
     [Fact]
     public async Task GetTokenAsync_WithInvalidJsonResponse_ThrowsInvalidOperationException()
@@ -365,7 +362,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, "not valid json");
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<JsonException>(() => provider.GetTokenAsync());
@@ -385,7 +382,7 @@ public class PasswordLimitedTokenProviderTests : IDisposable
         SetupHttpResponse(HttpStatusCode.OK, JsonSerializer.Serialize(tokenResponse));
 
         var options = Options.Create(_settings);
-        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClient);
+        using var provider = new PasswordLimitedTokenProvider(options, _loggerMock.Object, _httpClientFactoryMock.Object);
 
         // Act
         var token = await provider.GetTokenAsync();
