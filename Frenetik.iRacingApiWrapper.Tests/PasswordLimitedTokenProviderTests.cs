@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Service;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

@@ -7,7 +7,6 @@ using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 using System.Net.Http.Json;
@@ -19,7 +18,7 @@ namespace Frenetik.iRacingApiWrapper;
 /// </summary>
 public class IRacingApiService
 {
-    private readonly IRacingDataSettings _settings = new();
+    private readonly IRacingDataSettings _settings;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<IRacingApiService> _logger;
     private readonly IAsyncPolicy<HttpResponseMessage> _retryPolicy;
@@ -37,12 +36,12 @@ public class IRacingApiService
     /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
     /// <param name="settings">iRacing API settings (optional - defaults to standard configuration if not provided)</param>
     /// <param name="logger">Logger instance</param>
-    public IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings>? settings, ILogger<IRacingApiService> logger)
+    public IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _settings = settings?.Value ?? new IRacingDataSettings();
+        _settings = settings.Value;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _retryPolicy = RetryPolicyBuilder.BuildPolicy(_settings.RetryPolicy, _logger);
@@ -235,7 +234,7 @@ public class IRacingApiService
     /// </summary>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <returns></returns>
-    public Task<List<MemberAward>> GetMemberAwards(int? customerId) => GetResources<List<MemberAward>>($"/member/awards", true, BuildParameters(["cust_id"], [customerId]));
+    public Task<List<MemberAward>> GetMemberAwards(int? customerId = null) => GetResources<List<MemberAward>>($"/member/awards", true, BuildParameters(["cust_id"], [customerId]));
 
     /// <summary>
     /// Get a member's chart data.
@@ -244,7 +243,7 @@ public class IRacingApiService
     /// <param name="chartType">"1 - iRating; 2 - TT Rating; 3 - License/SR</param>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <returns></returns>
-    public Task<MemberChartData> GetMemberChartData(int categoryId, int chartType, int? customerId) => GetResources<MemberChartData>($"/member/chart_data", true, BuildParameters(["category_id", "chart_type", "cust_id"], [categoryId, chartType, customerId]));
+    public Task<MemberChartData> GetMemberChartData(int categoryId, int chartType, int? customerId = null) => GetResources<MemberChartData>($"/member/chart_data", true, BuildParameters(["category_id", "chart_type", "cust_id"], [categoryId, chartType, customerId]));
 
     /// <summary>
     /// Get a member's data.
@@ -271,7 +270,7 @@ public class IRacingApiService
     /// </summary>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <returns></returns>
-    public Task<MemberProfile> GetMemberProfile(int? customerId) => GetResources<MemberProfile>("/member/profile", true, BuildParameters(["cust_id"], [customerId]));
+    public Task<MemberProfile> GetMemberProfile(int? customerId = null) => GetResources<MemberProfile>("/member/profile", true, BuildParameters(["cust_id"], [customerId]));
 
     /// <summary>
     /// Get Member Recent Results <para />
@@ -280,7 +279,7 @@ public class IRacingApiService
     /// <param name="subSessionId"></param>
     /// <param name="includeLicenses"></param>
     /// <returns></returns>
-    public Task<SubSessionResults> GetResults(int subSessionId, bool? includeLicenses) => GetResources<SubSessionResults>($"/results/get", true, BuildParameters(["subsession_id", "include_licenses"], [subSessionId, includeLicenses]));
+    public Task<SubSessionResults> GetResults(int subSessionId, bool? includeLicenses = null) => GetResources<SubSessionResults>($"/results/get", true, BuildParameters(["subsession_id", "include_licenses"], [subSessionId, includeLicenses]));
 
     /// <summary>
     /// Get Result Event Logs
@@ -306,7 +305,7 @@ public class IRacingApiService
     /// <param name="customerId">Required if the subsession was a single-driver event. Optional for team events. If omitted for a team event then the laps driven by all the team's drivers will be included.</param>
     /// <param name="teamId">Required if the subsession was a team event.</param>
     /// <returns></returns>
-    public Task<ResultLapData> GetResultsLapData(int subSessionId, int simSessionNumber, int? customerId, int? teamId) => GetResources<ResultLapData>($"/results/lap_data", true, BuildParameters(["subsession_id", "simsession_number", "cust_id", "team_id"], [subSessionId, simSessionNumber, customerId, teamId]));
+    public Task<ResultLapData> GetResultsLapData(int subSessionId, int simSessionNumber, int? customerId = null, int? teamId = null) => GetResources<ResultLapData>($"/results/lap_data", true, BuildParameters(["subsession_id", "simsession_number", "cust_id", "team_id"], [subSessionId, simSessionNumber, customerId, teamId]));
 
     /// <summary>
     /// Hosted and league sessions.  Maximum time frame of 90 days. Results split into one or more files with chunks of results. For scraping results the most effective approach is to keep track of the maximum end_time found during a search then make the subsequent call using that date/time as the finish_range_begin and skip any subsessions that are duplicated.  Results are ordered by subsessionid which is a proxy for start time. Requires one of: start_range_begin, finish_range_begin. Requires one of: cust_id, team_id, host_cust_id, session_name.
@@ -398,7 +397,7 @@ public class IRacingApiService
     /// </summary>
     /// <param name="eventTypes">Types of events to include in the search. Defaults to all.</param>
     /// <returns></returns>
-    public Task<SeasonSpectatorSubSessionIdsResult> GetSeasonSpectatorSubSessionIds(IEnumerable<int>? eventTypes) =>
+    public Task<SeasonSpectatorSubSessionIdsResult> GetSeasonSpectatorSubSessionIds(IEnumerable<int>? eventTypes = null) =>
         GetResources<SeasonSpectatorSubSessionIdsResult>("/season/spectator_subsessionids", true, BuildParameters(["event_types"], [CreateCsv(eventTypes)]));
 
     /// <summary>
