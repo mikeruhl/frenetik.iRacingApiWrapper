@@ -16,9 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 - **OAuth 2.0 Migration**: Replaced legacy cookie-based authentication with OAuth 2.0 Password Limited grant type
-  - `IRacingAuthenticator` (cookie-based) has been **removed** - use `BearerTokenAuthenticator` with `ITokenProvider` instead
-  - `IRacingApiService` constructor no longer accepts username/password directly - requires `ITokenProvider` instance
+  - `IRacingAuthenticator` (cookie-based) has been **removed** - use `BearerTokenDelegatingHandler` with `ITokenProvider` instead
+  - `IRacingApiService` constructor now requires `IHttpClientFactory` and `ILogger` - authentication is handled via delegating handler
   - Configuration changes: `IRacingDataSettings.Username` and `IRacingDataSettings.Password` properties **removed**
+- **RestSharp Removed**: Migrated from RestSharp to native HttpClient with HttpClientFactory
+  - Better resource management and connection pooling
+  - Simplified dependency injection
 - **Interface changes**: `ITokenProvider.GetTokenAsync()` now includes optional `CancellationToken` parameter
 - **Migration required**: See README for updated OAuth configuration examples using `PasswordLimitedTokenProviderSettings`
 
@@ -30,12 +33,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Input validation for required configuration
   - Comprehensive error handling with detailed error messages
   - Cancellation token support for async operations
-- `BearerTokenAuthenticator` for RestSharp OAuth integration
+  - Uses `IHttpClientFactory` for proper HTTP client management
+- `BearerTokenDelegatingHandler` for HttpClient OAuth integration
+  - Intelligently adds authentication only to iRacing base URL requests
+  - External URLs (S3, CDN) do not receive authentication headers
 - `PasswordLimitedTokenProviderSettings` configuration class
 - iRacing-specific secret masking algorithm (Base64-encoded SHA-256)
 - Comprehensive unit test coverage (31 tests) for OAuth token provider
 - CI/CD workflow with automated test execution
 - Security warnings in README about credential storage
+- HttpClient resource management improvements (proper disposal, response buffering)
 
 ### Changed
 - Rate limiting detection now handles iRacing's specific implementation (400 + "unauthorized_client" + Retry-After header)
@@ -69,14 +76,19 @@ services.AddSingleton<IRacingApiService>(sp =>
 
 **After (v3.x):**
 ```csharp
+// Configure OAuth settings
 services.Configure<PasswordLimitedTokenProviderSettings>(
     Configuration.GetSection("OAuth"));
+
+// Register HTTP client with authentication handler
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+
+// Register services
+services.AddTransient<BearerTokenDelegatingHandler>();
 services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
-services.AddSingleton<IRacingApiService>(sp =>
-{
-    var tokenProvider = sp.GetRequiredService<ITokenProvider>();
-    return new IRacingApiService(tokenProvider);
-});
+services.AddSingleton<IRacingApiService>();
 ```
 
 See README for complete setup instructions including user secrets configuration.

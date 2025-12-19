@@ -54,6 +54,9 @@ public static class RetryPolicyBuilder
                     logger.LogWarning(
                         $"{requestType} request {statusDesc}. " +
                         $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.RateLimitRetryCount}");
+
+                    // Dispose the failed response to free resources
+                    response.Result?.Dispose();
                     await Task.CompletedTask;
                 });
     }
@@ -61,7 +64,8 @@ public static class RetryPolicyBuilder
     private static bool IsUnauthorizedClientError(HttpResponseMessage response)
     {
         // iRacing uses 400 + "unauthorized_client" to indicate rate limiting
-        var content = response.Content.ReadAsStringAsync().Result;
+        // Content is buffered before retry policy evaluation, so synchronous read is safe
+        var content = response.Content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         return content.Contains("unauthorized_client", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -87,6 +91,9 @@ public static class RetryPolicyBuilder
                     logger.LogWarning(
                         $"{requestType} request service unavailable (503). " +
                         $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.ServiceUnavailableRetryCount}");
+
+                    // Dispose the failed response to free resources
+                    response.Result?.Dispose();
                     await Task.CompletedTask;
                 });
     }
@@ -113,6 +120,9 @@ public static class RetryPolicyBuilder
                     logger.LogWarning(
                         $"{requestType} request {statusDescription}. " +
                         $"Waiting {timeSpan.TotalSeconds:F1}s before retry attempt {retryCount}/{settings.ServerErrorRetryCount}");
+
+                    // Dispose the failed response to free resources
+                    response.Result?.Dispose();
                     await Task.CompletedTask;
                 });
     }

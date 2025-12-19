@@ -32,33 +32,17 @@ public class IRacingApiService
     public const string HttpClientName = "IRacing";
 
     /// <summary>
-    /// Constructor for IRacingApiService with default settings
+    /// Constructor for IRacingApiService
     /// </summary>
     /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
+    /// <param name="settings">iRacing API settings (optional - defaults to standard configuration if not provided)</param>
     /// <param name="logger">Logger instance</param>
-    public IRacingApiService(IHttpClientFactory httpClientFactory, ILogger<IRacingApiService> logger)
+    public IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings>? settings, ILogger<IRacingApiService> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-        _retryPolicy = RetryPolicyBuilder.BuildPolicy(_settings.RetryPolicy, _logger);
-    }
-
-    /// <summary>
-    /// Constructor for IRacingApiService with custom settings (use this to override BaseUrl or retry policies)
-    /// </summary>
-    /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
-    /// <param name="settings">iRacing API settings</param>
-    /// <param name="logger">Logger instance</param>
-    public IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings> settings, ILogger<IRacingApiService> logger)
-    {
-        ArgumentNullException.ThrowIfNull(httpClientFactory);
-        ArgumentNullException.ThrowIfNull(settings);
-        ArgumentNullException.ThrowIfNull(logger);
-
-        _settings = settings.Value;
+        _settings = settings?.Value ?? new IRacingDataSettings();
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _retryPolicy = RetryPolicyBuilder.BuildPolicy(_settings.RetryPolicy, _logger);
@@ -650,28 +634,55 @@ public class IRacingApiService
             return new List<T>();
         }
 
-        var results = new List<T>();
         _logger.LogInformation($"Getting {assets.Count} assets from {baseUrl}");
 
-        foreach (var asset in assets)
+        var tasks = assets.Select(async asset =>
         {
             var url = $"{baseUrl.TrimEnd('/')}/{asset.TrimStart('/')}";
-            var result = await GetFromApi<T>(url);
-            results.Add(result);
-        }
-        return results;
+            return await GetFromApi<T>(url);
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results.ToList();
     }
 
     private async Task<T> GetFromApi<T>(string url)
     {
         var httpClient = _httpClientFactory.CreateClient(HttpClientName);
 
-        var response = await _retryPolicy.ExecuteAsync(async () =>
+        using var response = await _retryPolicy.ExecuteAsync(async () =>
         {
-            return await httpClient.GetAsync(url);
+            var resp = await httpClient.GetAsync(url);
+            // Buffer the content so it can be read multiple times synchronously in retry predicates
+            await resp.Content.LoadIntoBufferAsync();
+            return resp;
         });
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            ErrorResponse? errorResponse = null;
+            string? rawContent = null;
+
+            try
+            {
+                errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            }
+            catch (JsonException)
+            {
+                rawContent = await response.Content.ReadAsStringAsync();
+            }
+
+            var error = errorResponse?.Error;
+            var message = errorResponse?.Message;
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                rawContent ??= await response.Content.ReadAsStringAsync();
+                message = $"Request to {url} failed with status code {(int)response.StatusCode} ({response.ReasonPhrase}). Response content: {rawContent}";
+            }
+
+            throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
+        }
 
         var result = await response.Content.ReadFromJsonAsync<T>();
         if (result == null)
