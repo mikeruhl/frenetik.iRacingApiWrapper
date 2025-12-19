@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - Unreleased
+
+### Breaking Changes
+- **RestSharp Removed**: Migrated from RestSharp to native HttpClient with HttpClientFactory
+  - Better resource management and connection pooling
+  - Simplified dependency injection
+- **IRacingApiService Constructor Changes**: Complete signature redesign
+  - Old (v3.x): `IRacingApiService(ITokenProvider tokenProvider)` with RestSharp
+  - New (v4.x): `IRacingApiService(IHttpClientFactory httpClientFactory, IOptions<IRacingDataSettings>? settings, ILogger<IRacingApiService> logger)`
+  - Authentication now handled via `BearerTokenDelegatingHandler` instead of being tied to RestSharp
+  - Must register `IRacingApiService` through dependency injection (see Migration Guide below)
+
+### Added
+- `MaxParallelAssetRequests` setting in `IRacingDataSettings` (default: 10)
+  - Limits concurrent asset downloads to prevent connection pool exhaustion and rate limiting
+  - Configurable for different network conditions and rate limit requirements
+
+### Changed
+- HTTP client implementation migrated from RestSharp to native `HttpClient` with `IHttpClientFactory`
+- Better error handling with improved error messages from API responses
+
+### Fixed
+- Unbounded parallelism in `GetAssets` method that could cause connection pool exhaustion when downloading many assets
+- Response buffering to support retry policy synchronous reads
+- Proper disposal of HTTP responses in retry policies to prevent resource leaks
+
+### Migration Guide
+
+#### Constructor Usage Changes
+
+**Before (v3.x):**
+```csharp
+services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+services.AddSingleton<IRacingApiService>(sp =>
+{
+    var tokenProvider = sp.GetRequiredService<ITokenProvider>();
+    return new IRacingApiService(tokenProvider); // RestSharp-based
+});
+```
+
+**After (v4.x):**
+```csharp
+// Configure OAuth settings (if not already done)
+services.Configure<PasswordLimitedTokenProviderSettings>(
+    Configuration.GetSection("OAuth"));
+
+// Register HTTP client with authentication handler
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+
+// Register services
+services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+services.AddSingleton<IRacingApiService>();
+```
+
+#### Key Changes
+1. **No more RestSharp dependency** - Now uses native `HttpClient` for better performance
+2. **IHttpClientFactory required** - Better resource management and connection pooling
+3. **Authentication via delegating handler** - `BearerTokenDelegatingHandler` handles token injection
+4. **Dependency injection required** - Constructor complexity makes DI the only practical approach
+
+See README for complete setup instructions including user secrets configuration.
+
 ## [3.0.1] - 2025-12-18
 
 ### Fixed
@@ -19,9 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `IRacingAuthenticator` (cookie-based) has been **removed** - use `BearerTokenDelegatingHandler` with `ITokenProvider` instead
   - `IRacingApiService` constructor now requires `IHttpClientFactory` and `ILogger` - authentication is handled via delegating handler
   - Configuration changes: `IRacingDataSettings.Username` and `IRacingDataSettings.Password` properties **removed**
-- **RestSharp Removed**: Migrated from RestSharp to native HttpClient with HttpClientFactory
-  - Better resource management and connection pooling
-  - Simplified dependency injection
 - **Interface changes**: `ITokenProvider.GetTokenAsync()` now includes optional `CancellationToken` parameter
 - **Migration required**: See README for updated OAuth configuration examples using `PasswordLimitedTokenProviderSettings`
 
@@ -62,7 +124,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic token refresh when access token expires but refresh token is still valid
 - Falls back to password grant if refresh token is expired or unavailable
 - Thread-safe token acquisition using `SemaphoreSlim`
-- Tracks `HttpClient` ownership to prevent disposal of injected instances
 
 ### Migration Guide
 **Before (v2.x):**
