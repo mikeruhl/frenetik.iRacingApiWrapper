@@ -16,8 +16,7 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
 {
     private readonly PasswordLimitedTokenProviderSettings _settings;
     private readonly ILogger<PasswordLimitedTokenProvider> _logger;
-    private readonly HttpClient _httpClient;
-    private readonly bool _disposeHttpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     private TokenResponse? _cachedTokenResponse;
@@ -30,30 +29,21 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
     /// </summary>
     /// <param name="settings">OAuth configuration settings</param>
     /// <param name="logger">Logger instance</param>
-    /// <param name="httpClient">Optional HTTP client. If not provided, a new one will be created.</param>
+    /// <param name="httpClientFactory">HTTP client factory for creating clients per request</param>
     public PasswordLimitedTokenProvider(
         IOptions<PasswordLimitedTokenProviderSettings> settings,
         ILogger<PasswordLimitedTokenProvider> logger,
-        HttpClient? httpClient = null)
+        IHttpClientFactory httpClientFactory)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
 
         _settings = settings.Value;
         ValidateSettings(_settings);
 
         _logger = logger;
-
-        if (httpClient == null)
-        {
-            _httpClient = new HttpClient();
-            _disposeHttpClient = true;
-        }
-        else
-        {
-            _httpClient = httpClient;
-            _disposeHttpClient = false;
-        }
+        _httpClientFactory = httpClientFactory;
     }
 
     private static void ValidateSettings(PasswordLimitedTokenProviderSettings settings)
@@ -179,12 +169,14 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
     /// </summary>
     private async Task SendTokenRequestAsync(Dictionary<string, string> formData, CancellationToken cancellationToken)
     {
+        var httpClient = _httpClientFactory.CreateClient(IRacingApiService.HttpClientName);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, _settings.TokenEndpoint)
         {
             Content = new FormUrlEncodedContent(formData)
         };
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var response = await httpClient.SendAsync(request, cancellationToken);
 
         // If request failed, read error content for better error messages
         if (!response.IsSuccessStatusCode)
@@ -305,11 +297,6 @@ public class PasswordLimitedTokenProvider : ITokenProvider, IDisposable
         }
 
         _semaphore.Dispose();
-
-        if (_disposeHttpClient)
-        {
-            _httpClient.Dispose();
-        }
 
         _disposed = true;
     }
