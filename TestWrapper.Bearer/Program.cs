@@ -21,7 +21,12 @@ services.AddSingleton<ITokenProvider, NoOpTokenProvider>();
 services.AddSingleton<IRacingApiService>();
 services.AddLogging();
 
-var userBearerToken = ""; // Obtain token from https://oauth.iracing.com/oauth2/book/authorization_code_flow.html and set here.
+var userBearerToken = "YOUR_TOKEN_HERE"; // Obtain token from https://oauth.iracing.com/oauth2/book/authorization_code_flow.html and set here.
+
+if (string.IsNullOrWhiteSpace(userBearerToken) || userBearerToken == "YOUR_TOKEN_HERE")
+{
+    throw new InvalidOperationException("No bearer token configured. Obtain a token from https://oauth.iracing.com/oauth2/book/authorization_code_flow.html and assign it to 'userBearerToken'.");
+}
 
 var provider = services.BuildServiceProvider();
 

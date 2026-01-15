@@ -74,24 +74,25 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
-
-        // Assert
-        Assert.NotNull(request.Headers.Authorization);
-        Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
-        Assert.Equal(expectedToken, request.Headers.Authorization.Parameter);
+        using (var response = await invoker.SendAsync(request, CancellationToken.None))
+        {
+            // Assert
+            Assert.NotNull(request.Headers.Authorization);
+            Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
+            Assert.Equal(expectedToken, request.Headers.Authorization.Parameter);
+        }
     }
 
     [Fact]
@@ -104,7 +105,7 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://images-static.iracing.com/some-image.jpg");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://images-static.iracing.com/some-image.jpg");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -113,14 +114,15 @@ public class BearerTokenDelegatingHandlerTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
-
-        // Assert
-        Assert.Null(request.Headers.Authorization);
-        _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Never);
+        using (await invoker.SendAsync(request, CancellationToken.None))
+        {
+            // Assert
+            Assert.Null(request.Headers.Authorization);
+            _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 
     [Fact]
@@ -143,7 +145,7 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -152,18 +154,19 @@ public class BearerTokenDelegatingHandlerTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
+        using (await invoker.SendAsync(request, CancellationToken.None))
+        {
+            // Assert
+            Assert.NotNull(request.Headers.Authorization);
+            Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
+            Assert.Equal(contextToken, request.Headers.Authorization.Parameter);
 
-        // Assert
-        Assert.NotNull(request.Headers.Authorization);
-        Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
-        Assert.Equal(contextToken, request.Headers.Authorization.Parameter);
-
-        // Token provider should not be called when context has a token
-        _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Never);
+            // Token provider should not be called when context has a token
+            _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 
     [Fact]
@@ -185,19 +188,19 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
 
         // Assert
         Assert.NotNull(request.Headers.Authorization);
@@ -227,7 +230,7 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -236,18 +239,19 @@ public class BearerTokenDelegatingHandlerTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
+        using (await invoker.SendAsync(request, CancellationToken.None))
+        {
+            // Assert
+            Assert.NotNull(request.Headers.Authorization);
+            Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
+            Assert.Equal(providerToken, request.Headers.Authorization.Parameter);
 
-        // Assert
-        Assert.NotNull(request.Headers.Authorization);
-        Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
-        Assert.Equal(providerToken, request.Headers.Authorization.Parameter);
-
-        // Token provider should be called when context token is null
-        _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Once);
+            // Token provider should be called when context token is null
+            _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 
     [Fact]
@@ -267,8 +271,8 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
-        var invoker = new HttpMessageInvoker(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -295,7 +299,7 @@ public class BearerTokenDelegatingHandlerTests
             InnerHandler = _innerHandlerMock.Object
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
 
         _innerHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
@@ -304,16 +308,17 @@ public class BearerTokenDelegatingHandlerTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
 
-        var invoker = new HttpMessageInvoker(handler);
+        using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        await invoker.SendAsync(request, CancellationToken.None);
+        using (await invoker.SendAsync(request, CancellationToken.None))
+        {
+            // Assert
+            Assert.NotNull(request.Headers.Authorization);
+            Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
+            Assert.Equal(providerToken, request.Headers.Authorization.Parameter);
 
-        // Assert
-        Assert.NotNull(request.Headers.Authorization);
-        Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
-        Assert.Equal(providerToken, request.Headers.Authorization.Parameter);
-
-        _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _tokenProviderMock.Verify(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }
