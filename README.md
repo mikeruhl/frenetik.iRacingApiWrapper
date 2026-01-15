@@ -154,6 +154,72 @@ services.AddSingleton<ITokenProvider, MyTokenProvider>();
 services.AddSingleton<IRacingApiService>();
 ```
 
+### Option 3: Per-Request Bearer Tokens (Multi-User HTTP Server)
+
+For HTTP servers handling multiple users with different tokens per request, use `ITokenContext`:
+
+```csharp
+using Frenetik.iRacingApiWrapper;
+using Frenetik.iRacingApiWrapper.Service;
+using Microsoft.Extensions.DependencyInjection;
+
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register token context for per-request tokens
+    services.AddSingleton<ITokenContext, TokenContext>();
+
+    // Register HTTP client with authentication handler
+    services.AddHttpClient(IRacingApiService.HttpClientName)
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+        .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+
+    // Register services
+    services.AddTransient<BearerTokenDelegatingHandler>();
+
+    // Use NoOpTokenProvider since tokens come from context
+    services.AddSingleton<ITokenProvider, NoOpTokenProvider>();
+
+    services.AddSingleton<IRacingApiService>();
+    services.AddLogging();
+}
+```
+
+Then use it in your controllers or services:
+
+```csharp
+public class RacingController : ControllerBase
+{
+    private readonly IRacingApiService _racingApiService;
+    private readonly ITokenContext _tokenContext;
+
+    public RacingController(IRacingApiService racingApiService, ITokenContext tokenContext)
+    {
+        _racingApiService = racingApiService;
+        _tokenContext = tokenContext;
+    }
+
+    public async Task<IActionResult> GetUserSeries(string userBearerToken)
+    {
+        // Set token for this async execution flow
+        using (_tokenContext.SetToken(userBearerToken))
+        {
+            // All API calls within this scope will use the user's token
+            var series = await _racingApiService.GetSeries();
+            var cars = await _racingApiService.GetCars();
+
+            return Ok(new { series, cars });
+        }
+        // Token is automatically cleared when scope is disposed
+    }
+}
+```
+
+**Benefits:**
+- ✅ Thread-safe and async-flow-safe using `AsyncLocal`
+- ✅ Different tokens for concurrent requests
+- ✅ Automatic token cleanup with `IDisposable` pattern
+- ✅ No modifications needed to `IRacingApiService`
+
 ### Additional Resources
 
 - [iRacing OAuth Overview](https://oauth.iracing.com/oauth2/book/auth_overview.html)
@@ -234,3 +300,33 @@ catch (ErrorResponseException ex)
 - `429`: Retried with smart delay based on rate limit headers
 - `500-502`: Retried with exponential backoff
 - `503`: Not retried by default (maintenance can last hours)
+
+## Example Projects
+
+This repository includes two example projects demonstrating different authentication scenarios:
+
+### TestWrapper.PasswordLimited
+
+Demonstrates using the `PasswordLimitedTokenProvider` for automated/headless applications. This example shows how to use OAuth 2.0 Password Limited grant flow with user secrets.
+
+**Features:**
+- Automatic token acquisition and refresh
+- Configuration via user secrets or appsettings.json
+
+**Location:** `TestWrapper.PasswordLimited/Program.cs`
+
+### TestWrapper.Bearer
+
+Demonstrates using per-request bearer tokens with `ITokenContext` for multi-user HTTP server scenarios. This example shows how to use tokens obtained via OAuth 2.0 Authorization Code flow.
+
+**Features:**
+- Per-request token management
+- Support for concurrent users with different tokens
+- Async-safe token context
+
+**Location:** `TestWrapper.Bearer/Program.cs`
+
+**Usage:**
+1. Obtain a bearer token using the [Authorization Code Flow](https://oauth.iracing.com/oauth2/book/authorization_code_flow.html)
+2. Set the token in the `userBearerToken` variable
+3. Run the example to see token context in action

@@ -5,7 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - Unreleased
+## [4.1.0]
+
+### Added
+- `ITokenContext` interface and `TokenContext` implementation for per-request bearer token management
+  - Enables setting different bearer tokens for different API calls within the same application
+  - Uses `AsyncLocal<T>` to maintain token context across async boundaries
+  - Thread-safe and isolation-friendly for concurrent requests
+- `NoOpTokenProvider` - a no-operation token provider for use when tokens are provided via `ITokenContext`
+  - Returns empty string, allowing `BearerTokenDelegatingHandler` to use context tokens exclusively
+  - Simplifies configuration when using OAuth authorization code flow with per-user tokens
+- `BearerTokenDelegatingHandler` now supports optional `ITokenContext` parameter
+  - Prioritizes context tokens over provider tokens when both are available
+  - Falls back to `ITokenProvider` when no context token is set
+  - Throws `InvalidOperationException` when neither context nor provider has a token
+- `TestWrapper.Bearer` example project demonstrating OAuth authorization code flow usage
+  - Shows how to use `ITokenContext.SetToken()` for per-request authentication
+  - Includes setup instructions for obtaining bearer tokens from iRacing OAuth
+
+### Changed
+- `BearerTokenDelegatingHandler` constructor now accepts optional `ITokenContext` parameter
+  - Backward compatible - existing code without token context continues to work
+
+### Migration Guide
+
+#### Using Token Context for Per-Request Bearer Tokens
+
+**New pattern for OAuth authorization code flow:**
+```csharp
+// Register token context for per-request tokens
+services.AddSingleton<ITokenContext, TokenContext>();
+
+// Register HTTP client with authentication handler
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+
+// Register services
+services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddSingleton<ITokenProvider, NoOpTokenProvider>(); // Use NoOp when tokens come from context
+services.AddSingleton<IRacingApiService>();
+
+// Usage - set token per request
+var tokenContext = provider.GetRequiredService<ITokenContext>();
+var iRacingApiService = provider.GetRequiredService<IRacingApiService>();
+
+using (tokenContext.SetToken(userBearerToken))
+{
+    var memberInfo = await iRacingApiService.GetMemberInfo();
+    // API calls within this scope use userBearerToken
+}
+```
+
+See `TestWrapper.Bearer` project for a complete example.
+
+## [4.0.0]
 
 ### Breaking Changes
 - **RestSharp Removed**: Migrated from RestSharp to native HttpClient with HttpClientFactory
