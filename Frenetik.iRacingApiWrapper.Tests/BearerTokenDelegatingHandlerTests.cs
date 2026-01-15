@@ -86,7 +86,7 @@ public class BearerTokenDelegatingHandlerTests
         using var invoker = new HttpMessageInvoker(handler);
 
         // Act
-        using (var response = await invoker.SendAsync(request, CancellationToken.None))
+        using (await invoker.SendAsync(request, CancellationToken.None))
         {
             // Assert
             Assert.NotNull(request.Headers.Authorization);
@@ -152,7 +152,7 @@ public class BearerTokenDelegatingHandlerTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK));
 
         using var invoker = new HttpMessageInvoker(handler);
 
@@ -237,7 +237,7 @@ public class BearerTokenDelegatingHandlerTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK));
 
         using var invoker = new HttpMessageInvoker(handler);
 
@@ -306,7 +306,7 @@ public class BearerTokenDelegatingHandlerTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK));
 
         using var invoker = new HttpMessageInvoker(handler);
 
