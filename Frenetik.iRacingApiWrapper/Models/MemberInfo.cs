@@ -135,7 +135,7 @@ public class MemberInfo
 public class AccountInfo
 {
     [JsonPropertyName("ir_dollars")]
-    public int IrDollars { get; set; }
+    public double IrDollars { get; set; }
 
     [JsonPropertyName("ir_credits")]
     public int IrCredits { get; set; }
