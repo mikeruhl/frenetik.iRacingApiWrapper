@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0]
+
+### Added
+- Optional `httpClientName` parameter to `IRacingApiService` constructor
+  - Allows configuring custom HTTP client names instead of always using "IRacing"
+  - Enables registering multiple `IRacingApiService` instances with different authentication strategies
+  - Defaults to "IRacing" for backward compatibility
+- Support for mixed authentication patterns using keyed services (.NET 8+)
+  - Register both `PasswordLimitedTokenProvider` and `TokenContext` authentication in the same application
+  - Use `[FromKeyedServices]` attribute to inject the appropriate service instance
+  - Ideal for applications that need background jobs with service credentials AND user requests with per-request tokens
+
+### Changed
+- `IRacingApiService` now uses configurable `_httpClientName` field instead of hardcoded `HttpClientName` constant
+  - Internal implementation change with no breaking impact on existing code
+
+### Migration Guide
+
+#### Using Mixed Authentication (Pattern 3)
+
+Applications can now register both authentication strategies simultaneously:
+
+```csharp
+// Register password-limited for background jobs
+services.AddHttpClient("IRacing.PasswordLimited")
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler(sp => /* ... */);
+
+services.AddKeyedSingleton<ITokenProvider, PasswordLimitedTokenProvider>("PasswordLimited");
+services.AddKeyedSingleton<IRacingApiService>("PasswordLimited", (sp, key) =>
+    new IRacingApiService(
+        sp.GetRequiredService<IHttpClientFactory>(),
+        sp.GetRequiredService<IOptions<IRacingDataSettings>>(),
+        sp.GetRequiredService<ILogger<IRacingApiService>>(),
+        "IRacing.PasswordLimited")); // Custom client name
+
+// Register token-context for user requests
+services.AddHttpClient("IRacing.TokenContext")
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+    .AddHttpMessageHandler(sp => /* ... */);
+
+services.AddKeyedSingleton<ITokenContext, TokenContext>("TokenContext");
+services.AddKeyedSingleton<ITokenProvider, NoOpTokenProvider>("TokenContext");
+services.AddKeyedSingleton<IRacingApiService>("TokenContext", (sp, key) =>
+    new IRacingApiService(
+        sp.GetRequiredService<IHttpClientFactory>(),
+        sp.GetRequiredService<IOptions<IRacingDataSettings>>(),
+        sp.GetRequiredService<ILogger<IRacingApiService>>(),
+        "IRacing.TokenContext")); // Custom client name
+
+// Inject using keyed services
+public BackgroundService([FromKeyedServices("PasswordLimited")] IRacingApiService api) { }
+public UserController([FromKeyedServices("TokenContext")] IRacingApiService api) { }
+```
+
+See README for complete examples of all three authentication patterns.
+
 ## [4.1.0]
 
 ### Added
@@ -250,6 +307,9 @@ See README for complete setup instructions including user secrets configuration.
 - Project initialization
 - Basic API wrapper structure
 
+[4.2.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.1.0...v4.2.0
+[4.1.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.0.0...v4.1.0
+[4.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v3.0.1...v4.0.0
 [3.0.1]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v1.0.2...v2.0.0
