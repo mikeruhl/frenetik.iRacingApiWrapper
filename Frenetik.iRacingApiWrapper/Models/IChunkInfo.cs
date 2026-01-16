@@ -1,4 +1,4 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
 
 /// <summary>
 /// Interface for reponse objects that contain a ChunkInfo object
@@ -13,3 +13,4 @@ public interface IChunkInfo<T> where T : class
     [JsonPropertyName("chunk_info")]
     public ChunkInfo ChunkInfo { get; }
 }
+

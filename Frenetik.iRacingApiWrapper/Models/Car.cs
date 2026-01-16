@@ -1,4 +1,7 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
+/// <summary>
+/// Represents a car in iRacing.
+/// </summary>
 public class Car
 {
     /// <summary>
@@ -158,13 +161,13 @@ public class Car
     public int MinPowerAdjustPct { get; set; } = 0;
 
     /// <summary>
-    /// Package Id
+    /// Content Package Id
     /// </summary>
     [JsonPropertyName("package_id")]
     public int PackageId { get; set; } = 0;
 
     /// <summary>
-    /// Patterns
+    /// Currently chosen paint pattern Id
     /// </summary>
     [JsonPropertyName("patterns")]
     public int Patterns { get; set; } = 0;
@@ -181,6 +184,9 @@ public class Car
     [JsonPropertyName("price_display")]
     public string PriceDisplay { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Rain racing enabled
+    /// </summary>
     [JsonPropertyName("rain_enabled")]
     public bool RainEnabled { get; set; }
 
@@ -202,9 +208,16 @@ public class Car
     [JsonPropertyName("sku")]
     public int Sku { get; set; } = 0;
 
+    /// <summary>
+    /// Car type classification
+    /// </summary>
     public class CarTypeResult
     {
+        /// <summary>
+        /// Type name
+        /// </summary>
         [JsonPropertyName("car_type")]
         public string CarType { get; set; } = string.Empty;
     }
 }
+

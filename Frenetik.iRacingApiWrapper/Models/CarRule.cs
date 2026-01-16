@@ -1,5 +1,8 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
 
+/// <summary>
+/// Represents a car racing rule or regulation
+/// </summary>
 public class CarRule
 {
     /// <summary>
@@ -14,3 +17,4 @@ public class CarRule
     [JsonPropertyName("text")]
     public string Text { get; set; } = string.Empty;
 }
+

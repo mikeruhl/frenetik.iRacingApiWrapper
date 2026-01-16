@@ -5,24 +5,49 @@ namespace Frenetik.iRacingApiWrapper.JsonConverters;
 
 
 /// <summary>
-/// Json Converter
+/// Converts JSON property that can be either a single item or an array to a list.
 /// </summary>
-/// <typeparam name="TItem"></typeparam>
+/// <typeparam name="TItem">Type of items in the collection.</typeparam>
 /// <remarks>Credit to answer from <see href="https://stackoverflow.com/questions/59430728/how-to-handle-both-a-single-item-and-an-array-for-the-same-property-using-system"/></remarks>
 public class SingleOrArrayConverter<TItem> : SingleOrArrayConverter<List<TItem>, TItem>
 {
+    /// <summary>
+    /// Initializes a new instance with writing enabled.
+    /// </summary>
     public SingleOrArrayConverter() : this(true) { }
+    /// <summary>
+    /// Initializes a new instance with specified write capability.
+    /// </summary>
+    /// <param name="canWrite">Whether the converter can write single items as non-array values.</param>
     public SingleOrArrayConverter(bool canWrite) : base(canWrite) { }
 }
 
+/// <summary>
+/// Factory for creating SingleOrArrayConverter instances.
+/// </summary>
 public class SingleOrArrayConverterFactory : JsonConverterFactory
 {
+    /// <summary>
+    /// Gets whether the converter can write single items as non-array values.
+    /// </summary>
     public bool CanWrite { get; }
 
+    /// <summary>
+    /// Initializes a new instance with writing enabled.
+    /// </summary>
     public SingleOrArrayConverterFactory() : this(true) { }
 
+    /// <summary>
+    /// Initializes a new instance with specified write capability.
+    /// </summary>
+    /// <param name="canWrite">Whether the converter can write single items as non-array values.</param>
     public SingleOrArrayConverterFactory(bool canWrite) => CanWrite = canWrite;
 
+    /// <summary>
+    /// Determines whether this converter can convert the specified type.
+    /// </summary>
+    /// <param name="typeToConvert">Type to check for conversion support.</param>
+    /// <returns>True if the type can be converted.</returns>
     public override bool CanConvert(Type typeToConvert)
     {
         var itemType = GetItemType(typeToConvert);
@@ -35,6 +60,12 @@ public class SingleOrArrayConverterFactory : JsonConverterFactory
         return true;
     }
 
+    /// <summary>
+    /// Creates a converter instance for the specified type.
+    /// </summary>
+    /// <param name="typeToConvert">Type to create converter for.</param>
+    /// <param name="options">JSON serializer options.</param>
+    /// <returns>A configured converter instance.</returns>
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var itemType = GetItemType(typeToConvert) ?? throw new InvalidOperationException($"Could not get item type for: {typeToConvert.GetType().Name}");
@@ -62,13 +93,35 @@ public class SingleOrArrayConverterFactory : JsonConverterFactory
     }
 }
 
+/// <summary>
+/// Converts JSON property that can be either a single item or an array to a collection.
+/// </summary>
+/// <typeparam name="TCollection">Collection type to deserialize into.</typeparam>
+/// <typeparam name="TItem">Type of items in the collection.</typeparam>
 public class SingleOrArrayConverter<TCollection, TItem> : JsonConverter<TCollection> where TCollection : class, ICollection<TItem>, new()
 {
+    /// <summary>
+    /// Initializes a new instance with writing enabled.
+    /// </summary>
     public SingleOrArrayConverter() : this(true) { }
+    /// <summary>
+    /// Initializes a new instance with specified write capability.
+    /// </summary>
+    /// <param name="canWrite">Whether the converter can write single items as non-array values.</param>
     public SingleOrArrayConverter(bool canWrite) => CanWrite = canWrite;
 
+    /// <summary>
+    /// Gets whether the converter can write single items as non-array values.
+    /// </summary>
     public bool CanWrite { get; }
 
+    /// <summary>
+    /// Reads and converts JSON to the target collection type.
+    /// </summary>
+    /// <param name="reader">The JSON reader.</param>
+    /// <param name="typeToConvert">Type to convert.</param>
+    /// <param name="options">Serializer options.</param>
+    /// <returns>The deserialized collection.</returns>
     public override TCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         switch (reader.TokenType)
@@ -89,6 +142,12 @@ public class SingleOrArrayConverter<TCollection, TItem> : JsonConverter<TCollect
         }
     }
 
+    /// <summary>
+    /// Writes the collection to JSON, optionally as a single item if it contains only one element.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="value">The collection to write.</param>
+    /// <param name="options">Serializer options.</param>
     public override void Write(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options)
     {
         if (CanWrite && value.Count == 1)

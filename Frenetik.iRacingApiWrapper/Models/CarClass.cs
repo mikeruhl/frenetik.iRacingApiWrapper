@@ -1,5 +1,8 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
 
+/// <summary>
+/// Represents a car class grouping
+/// </summary>
 public class CarClass
 {
     /// <summary>
@@ -15,7 +18,7 @@ public class CarClass
     public List<CarRef> CarsInClass { get; set; } = new List<CarRef>();
 
     /// <summary>
-    /// Cust Id
+    /// Customer Id
     /// </summary>
     [JsonPropertyName("cust_id")]
     public int CustId { get; set; }
@@ -44,15 +47,28 @@ public class CarClass
     [JsonPropertyName("short_name")]
     public string ShortName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Reference to a car within the class
+    /// </summary>
     public class CarRef
     {
+        /// <summary>
+        /// Car directory path
+        /// </summary>
         [JsonPropertyName("car_dirpath")]
         public string CarDirPath { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Car Id
+        /// </summary>
         [JsonPropertyName("car_id")]
         public int CarId { get; set; }
 
+        /// <summary>
+        /// Whether car is retired
+        /// </summary>
         [JsonPropertyName("retired")]
         public bool IsRetired { get; set; }
     }
 }
+
