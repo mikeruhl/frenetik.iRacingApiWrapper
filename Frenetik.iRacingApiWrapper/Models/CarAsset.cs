@@ -1,4 +1,4 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
 
 /// <summary>
 /// Car Asset
@@ -97,3 +97,4 @@ public class CarAsset
     public string TemplatePath { get; set; } = string.Empty;
 
 }
+

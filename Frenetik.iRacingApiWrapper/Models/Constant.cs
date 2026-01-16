@@ -1,4 +1,4 @@
-﻿namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models;
 
 /// <summary>
 /// Constants for iRacing
@@ -17,3 +17,4 @@ public class Constant
     [JsonPropertyName("label")]
     public string Label { get; set; } = string.Empty;
 }
+
