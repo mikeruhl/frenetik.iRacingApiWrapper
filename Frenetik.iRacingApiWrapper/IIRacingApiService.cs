@@ -103,9 +103,9 @@ namespace Frenetik.iRacingApiWrapper
         /// <summary>
         /// Get LeagueMembership by Customer Id
         /// </summary>
-        /// <param name="customerId">If different from the authenticated member, the following resrictions apply: <para />
+        /// <param name="customerId">If different from the authenticated member, the following restrictions apply: <para />
         /// - Caller cannot be on requested customer's block list or an empty list will result;<para />
-        /// - Requested customer cannot have their online activity prefrence set to hidden or an empty list will result;<para />
+        /// - Requested customer cannot have their online activity preference set to hidden or an empty list will result;<para />
         /// - Only leagues for which the requested customer is an admin and the league roster is not private are returned.</param>
         /// <param name="includeLeague"></param>
         /// <returns></returns>
@@ -266,7 +266,7 @@ namespace Frenetik.iRacingApiWrapper
         /// Get Season Results
         /// </summary>
         /// <param name="seasonId">Season Id (required)</param>
-        /// <param name="eventType">Retrict to one event type: 2 - Practice; 3 - Qualify; 4 - Time Trial; 5 - Race</param>
+        /// <param name="eventType">Restrict to one event type: 2 - Practice; 3 - Qualify; 4 - Time Trial; 5 - Race</param>
         /// <param name="raceWeekNum">The first race week of a season is 0.</param>
         /// <returns></returns>
         Task<ResultsSeasonResults> GetResultsSeasonResults(int seasonId, int? eventType = null, int? raceWeekNum = null);
@@ -301,7 +301,7 @@ namespace Frenetik.iRacingApiWrapper
         Task<List<SeriesResult>> GetSeries();
 
         /// <summary>
-        /// Get Series Assetts (image paths are relative to https://images-static.iracing.com/)
+        /// Get Series Assets (image paths are relative to https://images-static.iracing.com/)
         /// </summary>
         /// <returns>Dictionary where key is series id and value is series asset</returns>
         Task<Dictionary<string, SeriesAsset>> GetSeriesAssets();
