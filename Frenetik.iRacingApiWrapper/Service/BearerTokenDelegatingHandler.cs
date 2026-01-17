@@ -8,6 +8,14 @@ namespace Frenetik.iRacingApiWrapper.Service;
 /// External requests (S3, CDN, etc.) are passed through without authentication.
 /// Supports both single-user (via ITokenProvider) and multi-user scenarios (via ITokenContext).
 /// </summary>
+/// <remarks>
+/// This handler has been split into two focused handlers for better separation of concerns:
+/// <list type="bullet">
+/// <item><description>Use <see cref="PasswordLimitedTokenHandler"/> for single-user scenarios (Pattern 1)</description></item>
+/// <item><description>Use <see cref="TokenContextHandler"/> for multi-user scenarios (Pattern 2)</description></item>
+/// </list>
+/// </remarks>
+[Obsolete("Use PasswordLimitedTokenHandler for single-user scenarios or TokenContextHandler for multi-user scenarios. This class will be removed in a future version.")]
 public class BearerTokenDelegatingHandler : DelegatingHandler
 {
     private readonly ITokenProvider _tokenProvider;

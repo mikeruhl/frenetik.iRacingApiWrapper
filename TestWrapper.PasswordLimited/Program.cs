@@ -32,10 +32,10 @@ internal class Program
         // Register HTTP client
         services.AddHttpClient(IRacingApiService.HttpClientName)
             .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-            .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+            .AddHttpMessageHandler<PasswordLimitedTokenHandler>();
 
         // Register services
-        services.AddTransient<BearerTokenDelegatingHandler>();
+        services.AddTransient<PasswordLimitedTokenHandler>();
         services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
         services.AddSingleton<IRacingApiService>();
 

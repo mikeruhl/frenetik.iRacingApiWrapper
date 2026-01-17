@@ -10,14 +10,10 @@ services.AddSingleton<ITokenContext, TokenContext>();
 // Register HTTP client with authentication handler
 services.AddHttpClient(IRacingApiService.HttpClientName)
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+    .AddHttpMessageHandler<TokenContextHandler>();
 
 // Register services
-services.AddTransient<BearerTokenDelegatingHandler>();
-
-// Use NoOpTokenProvider since tokens come from context
-services.AddSingleton<ITokenProvider, NoOpTokenProvider>();
-
+services.AddTransient<TokenContextHandler>();
 services.AddSingleton<IRacingApiService>();
 services.AddLogging();
 

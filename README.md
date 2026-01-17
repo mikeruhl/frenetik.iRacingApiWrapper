@@ -61,9 +61,9 @@ services.Configure<PasswordLimitedTokenProviderSettings>(options =>
 
 // Register services
 services.AddHttpClient(IRacingApiService.HttpClientName)
-    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+    .AddHttpMessageHandler<PasswordLimitedTokenHandler>();
 
-services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddTransient<PasswordLimitedTokenHandler>();
 services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
 services.AddSingleton<IIRacingApiService, IRacingApiService>();
 services.AddLogging();
@@ -101,9 +101,9 @@ services.Configure<PasswordLimitedTokenProviderSettings>(
     Configuration.GetSection("OAuth"));
 
 services.AddHttpClient(IRacingApiService.HttpClientName)
-    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+    .AddHttpMessageHandler<PasswordLimitedTokenHandler>();
 
-services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddTransient<PasswordLimitedTokenHandler>();
 services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
 services.AddSingleton<IIRacingApiService, IRacingApiService>();
 ```
@@ -126,10 +126,9 @@ services.AddSingleton<IIRacingApiService, IRacingApiService>();
 ```csharp
 services.AddSingleton<ITokenContext, TokenContext>();
 services.AddHttpClient(IRacingApiService.HttpClientName)
-    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+    .AddHttpMessageHandler<TokenContextHandler>();
 
-services.AddTransient<BearerTokenDelegatingHandler>();
-services.AddSingleton<ITokenProvider, NoOpTokenProvider>();
+services.AddTransient<TokenContextHandler>();
 services.AddSingleton<IIRacingApiService, IRacingApiService>();
 ```
 

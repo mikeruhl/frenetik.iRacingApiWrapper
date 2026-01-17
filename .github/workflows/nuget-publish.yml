@@ -31,8 +31,17 @@ jobs:
       shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
-        $version = $tag -replace '^v', ''
+        $version = $tag -replace '^v\.?', ''
         echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+        # Determine if this is a pre-release version
+        if ($version -match '-') {
+          echo "IS_PRERELEASE=true" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Detected pre-release version: $version"
+        } else {
+          echo "IS_PRERELEASE=false" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Detected stable release version: $version"
+        }
 
     - name: Clean workspace
       run: dotnet clean Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj --configuration Release
@@ -56,4 +65,9 @@ jobs:
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: |
-        dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key "$NUGET_API_KEY"
+        if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+          echo "Publishing pre-release package version ${{ env.VERSION }} to NuGet..."
+        else
+          echo "Publishing stable release version ${{ env.VERSION }} to NuGet..."
+        fi
+        dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key "$NUGET_API_KEY" --skip-duplicate
