@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.2.0]
 
 ### Added
+- `PasswordLimitedTokenHandler` - Dedicated handler for single-user authentication scenarios
+  - Cleaner implementation focused solely on `ITokenProvider` authentication
+  - Eliminates unnecessary dependencies and conditional logic
+  - Recommended replacement for `BearerTokenDelegatingHandler` in Pattern 1 (single-user) scenarios
+- `TokenContextHandler` - Dedicated handler for multi-user authentication scenarios
+  - Focused solely on `ITokenContext` per-request token management
+  - No dependency on `ITokenProvider` - eliminates need for `NoOpTokenProvider`
+  - Recommended replacement for `BearerTokenDelegatingHandler` in Pattern 2 (multi-user) scenarios
 - Optional `httpClientName` parameter to `IRacingApiService` constructor
   - Allows configuring custom HTTP client names instead of always using "IRacing"
   - Enables registering multiple `IRacingApiService` instances with different authentication strategies
@@ -17,11 +25,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Use `[FromKeyedServices]` attribute to inject the appropriate service instance
   - Ideal for applications that need background jobs with service credentials AND user requests with per-request tokens
 
+### Deprecated
+- `BearerTokenDelegatingHandler` - Split into two focused handlers for better separation of concerns
+  - Use `PasswordLimitedTokenHandler` for single-user scenarios (Pattern 1)
+  - Use `TokenContextHandler` for multi-user scenarios (Pattern 2)
+  - Will be marked as `[Obsolete]` in a future version
+- `NoOpTokenProvider` - No longer needed with `TokenContextHandler`
+  - `TokenContextHandler` doesn't require an `ITokenProvider` dependency
+  - Will be removed in a future version
+
 ### Changed
 - `IRacingApiService` now uses configurable `_httpClientName` field instead of hardcoded `HttpClientName` constant
   - Internal implementation change with no breaking impact on existing code
 
 ### Migration Guide
+
+#### Migrating from BearerTokenDelegatingHandler
+
+**Pattern 1 (Single-User) - Before:**
+```csharp
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+```
+
+**Pattern 1 (Single-User) - After:**
+```csharp
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .AddHttpMessageHandler<PasswordLimitedTokenHandler>();
+services.AddTransient<PasswordLimitedTokenHandler>();
+services.AddSingleton<ITokenProvider, PasswordLimitedTokenProvider>();
+```
+
+**Pattern 2 (Multi-User) - Before:**
+```csharp
+services.AddSingleton<ITokenContext, TokenContext>();
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .AddHttpMessageHandler<BearerTokenDelegatingHandler>();
+services.AddTransient<BearerTokenDelegatingHandler>();
+services.AddSingleton<ITokenProvider, NoOpTokenProvider>(); // No longer needed
+```
+
+**Pattern 2 (Multi-User) - After:**
+```csharp
+services.AddSingleton<ITokenContext, TokenContext>();
+services.AddHttpClient(IRacingApiService.HttpClientName)
+    .AddHttpMessageHandler<TokenContextHandler>();
+services.AddTransient<TokenContextHandler>();
+// No ITokenProvider needed!
+```
 
 #### Using Mixed Authentication (Pattern 3)
 
@@ -31,10 +84,11 @@ Applications can now register both authentication strategies simultaneously:
 // Register password-limited for background jobs
 services.AddHttpClient("IRacing.PasswordLimited")
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddHttpMessageHandler(sp => /* ... */);
+    .AddHttpMessageHandler<PasswordLimitedTokenHandler>();
 
+services.AddTransient<PasswordLimitedTokenHandler>();
 services.AddKeyedSingleton<ITokenProvider, PasswordLimitedTokenProvider>("PasswordLimited");
-services.AddKeyedSingleton<IRacingApiService>("PasswordLimited", (sp, key) =>
+services.AddKeyedSingleton<IIRacingApiService, IRacingApiService>("PasswordLimited", (sp, key) =>
     new IRacingApiService(
         sp.GetRequiredService<IHttpClientFactory>(),
         sp.GetRequiredService<IOptions<IRacingDataSettings>>(),
@@ -44,11 +98,11 @@ services.AddKeyedSingleton<IRacingApiService>("PasswordLimited", (sp, key) =>
 // Register token-context for user requests
 services.AddHttpClient("IRacing.TokenContext")
     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .AddHttpMessageHandler(sp => /* ... */);
+    .AddHttpMessageHandler<TokenContextHandler>();
 
+services.AddTransient<TokenContextHandler>();
 services.AddKeyedSingleton<ITokenContext, TokenContext>("TokenContext");
-services.AddKeyedSingleton<ITokenProvider, NoOpTokenProvider>("TokenContext");
-services.AddKeyedSingleton<IRacingApiService>("TokenContext", (sp, key) =>
+services.AddKeyedSingleton<IIRacingApiService, IRacingApiService>("TokenContext", (sp, key) =>
     new IRacingApiService(
         sp.GetRequiredService<IHttpClientFactory>(),
         sp.GetRequiredService<IOptions<IRacingDataSettings>>(),
@@ -56,8 +110,8 @@ services.AddKeyedSingleton<IRacingApiService>("TokenContext", (sp, key) =>
         "IRacing.TokenContext")); // Custom client name
 
 // Inject using keyed services
-public BackgroundService([FromKeyedServices("PasswordLimited")] IRacingApiService api) { }
-public UserController([FromKeyedServices("TokenContext")] IRacingApiService api) { }
+public BackgroundService([FromKeyedServices("PasswordLimited")] IIRacingApiService api) { }
+public UserController([FromKeyedServices("TokenContext")] IIRacingApiService api) { }
 ```
 
 See README for complete examples of all three authentication patterns.

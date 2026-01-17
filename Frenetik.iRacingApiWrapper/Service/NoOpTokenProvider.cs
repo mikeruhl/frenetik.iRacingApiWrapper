@@ -4,6 +4,11 @@ namespace Frenetik.iRacingApiWrapper.Service;
 /// A no-operation token provider for multi-user scenarios where tokens are provided per-request via ITokenContext.
 /// This provider returns an empty string and relies on the BearerTokenDelegatingHandler to use the token from ITokenContext instead.
 /// </summary>
+/// <remarks>
+/// This class is no longer needed when using <see cref="TokenContextHandler"/>, which doesn't require an ITokenProvider dependency.
+/// Only use this if you're still using the deprecated <see cref="BearerTokenDelegatingHandler"/>.
+/// </remarks>
+[Obsolete("Use TokenContextHandler instead, which doesn't require an ITokenProvider. This class will be removed in a future version.")]
 public class NoOpTokenProvider : ITokenProvider
 {
     /// <summary>
