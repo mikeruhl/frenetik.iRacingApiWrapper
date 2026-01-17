@@ -240,7 +240,7 @@ public class TokenContextHandlerTests
         // Act - First request
         _tokenContextMock.Setup(tc => tc.CurrentToken).Returns(token1);
         using var request1 = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/series/get");
-        using (var response1 = await invoker.SendAsync(request1, CancellationToken.None))
+        using (_ = await invoker.SendAsync(request1, CancellationToken.None))
         {
             Assert.Equal(token1, request1.Headers.Authorization?.Parameter);
         }
@@ -248,7 +248,7 @@ public class TokenContextHandlerTests
         // Act - Second request with different token
         _tokenContextMock.Setup(tc => tc.CurrentToken).Returns(token2);
         using var request2 = new HttpRequestMessage(HttpMethod.Get, "https://members-ng.iracing.com/data/member/get");
-        using (var response2 = await invoker.SendAsync(request2, CancellationToken.None))
+        using (_ = await invoker.SendAsync(request2, CancellationToken.None))
         {
             Assert.Equal(token2, request2.Headers.Authorization?.Parameter);
         }

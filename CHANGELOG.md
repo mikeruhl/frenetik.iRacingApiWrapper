@@ -29,10 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BearerTokenDelegatingHandler` - Split into two focused handlers for better separation of concerns
   - Use `PasswordLimitedTokenHandler` for single-user scenarios (Pattern 1)
   - Use `TokenContextHandler` for multi-user scenarios (Pattern 2)
-  - Will be marked as `[Obsolete]` in a future version
+  - Marked as `[Obsolete]` in this version
+  - Will be removed in future version
 - `NoOpTokenProvider` - No longer needed with `TokenContextHandler`
   - `TokenContextHandler` doesn't require an `ITokenProvider` dependency
-  - Will be removed in a future version
+  - Marked as obsolete in this version
+  - Will be removed in future version
 
 ### Changed
 - `IRacingApiService` now uses configurable `_httpClientName` field instead of hardcoded `HttpClientName` constant
