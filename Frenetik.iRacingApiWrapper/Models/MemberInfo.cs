@@ -12,18 +12,6 @@ public class MemberInfo
     public int CustomerId { get; set; }
 
     /// <summary>
-    /// Email
-    /// </summary>
-    [JsonPropertyName("email")]
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Username
-    /// </summary>
-    [JsonPropertyName("username")]
-    public string Username { get; set; } = string.Empty;
-
-    /// <summary>
     /// Display Name
     /// </summary>
     [JsonPropertyName("display_name")]
@@ -54,30 +42,6 @@ public class MemberInfo
     public DateTime MemberSince { get; set; }
 
     /// <summary>
-    /// Last Test Track
-    /// </summary>
-    [JsonPropertyName("last_test_track")]
-    public int LastTestTrack { get; set; }
-
-    /// <summary>
-    /// Last Test Car
-    /// </summary>
-    [JsonPropertyName("last_test_car")]
-    public int LastTestCar { get; set; }
-
-    /// <summary>
-    /// Last Season
-    /// </summary>
-    [JsonPropertyName("last_season")]
-    public int LastSeason { get; set; }
-
-    /// <summary>
-    /// Flags
-    /// </summary>
-    [JsonPropertyName("flags")]
-    public int Flags { get; set; }
-
-    /// <summary>
     /// Flair Id
     /// </summary>
     [JsonPropertyName("flair_id")]
@@ -102,6 +66,36 @@ public class MemberInfo
     public string FlairCountryCode { get; set; } = string.Empty;
 
     /// <summary>
+    /// Last Login
+    /// </summary>
+    [JsonPropertyName("last_login")]
+    public DateTime LastLogin { get; set; }
+
+    /// <summary>
+    /// Read Tc
+    /// </summary>
+    [JsonPropertyName("read_tc")]
+    public DateTime ReadTermsAndConditions { get; set; }
+
+    /// <summary>
+    /// Read Pp
+    /// </summary>
+    [JsonPropertyName("read_pp")]
+    public DateTime ReadPrivacyPolicy { get; set; }
+
+    /// <summary>
+    /// Read Comp Rules
+    /// </summary>
+    [JsonPropertyName("read_comp_rules")]
+    public DateTime ReadCompRules { get; set; }
+
+    /// <summary>
+    /// Flags
+    /// </summary>
+    [JsonPropertyName("flags")]
+    public int Flags { get; set; }
+
+    /// <summary>
     /// Connection Type
     /// </summary>
     [JsonPropertyName("connection_type")]
@@ -112,18 +106,6 @@ public class MemberInfo
     /// </summary>
     [JsonPropertyName("download_server")]
     public string DownloadServer { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Last Login
-    /// </summary>
-    [JsonPropertyName("last_login")]
-    public DateTime LastLogin { get; set; }
-
-    /// <summary>
-    /// Read Comp Rules
-    /// </summary>
-    [JsonPropertyName("read_comp_rules")]
-    public DateTime ReadCompRules { get; set; }
 
     /// <summary>
     /// Account
@@ -195,13 +177,19 @@ public class MemberInfo
     /// Restrictions
     /// </summary>
     [JsonPropertyName("restrictions")]
-    public Dictionary<string, object> Restrictions { get; set; } = new Dictionary<string, object>();
+    public Dictionary<string, object> Restrictions { get; set; } = [];
 
     /// <summary>
     /// Has Read Comp Rules
     /// </summary>
     [JsonPropertyName("has_read_comp_rules")]
     public bool HasReadCompRules { get; set; }
+
+    /// <summary>
+    /// Has Read NDA
+    /// </summary>
+    [JsonPropertyName("has_read_nda")]
+    public bool HasReadNDA { get; set; }
 
     /// <summary>
     /// Flags Hex
@@ -222,34 +210,16 @@ public class MemberInfo
     public bool HasTwentyPctDiscount { get; set; }
 
     /// <summary>
-    /// Race Official
+    /// Last Season
     /// </summary>
-    [JsonPropertyName("race_official")]
-    public bool IsRaceOfficial { get; set; }
+    [JsonPropertyName("last_season")]
+    public int LastSeason { get; set; }
 
     /// <summary>
-    /// Ai
+    /// Has Additional Content
     /// </summary>
-    [JsonPropertyName("ai")]
-    public bool IsAI { get; set; }
-
-    /// <summary>
-    /// Bypass Hosted Password
-    /// </summary>
-    [JsonPropertyName("bypass_hosted_password")]
-    public bool BypassHostedPassword { get; set; }
-
-    /// <summary>
-    /// Read Tc
-    /// </summary>
-    [JsonPropertyName("read_tc")]
-    public DateTime ReadTermsAndConditions { get; set; }
-
-    /// <summary>
-    /// Read Pp
-    /// </summary>
-    [JsonPropertyName("read_pp")]
-    public DateTime ReadPrivacyPolicy { get; set; }
+    [JsonPropertyName("has_additional_content")]
+    public int HasAdditionalContent { get; set; }
 
     /// <summary>
     /// Has Read Tc
@@ -384,10 +354,16 @@ public class LicenseInfo
     public LicenseCategoryInfo Oval { get; set; } = new LicenseCategoryInfo();
 
     /// <summary>
-    /// Road
+    /// Sports Car
     /// </summary>
-    [JsonPropertyName("road")]
-    public LicenseCategoryInfo Road { get; set; } = new LicenseCategoryInfo();
+    [JsonPropertyName("sports_car")]
+    public LicenseCategoryInfo SportsCar { get; set; } = new LicenseCategoryInfo();
+
+    /// <summary>
+    /// Formula Car
+    /// </summary>
+    [JsonPropertyName("formula_car")]
+    public LicenseCategoryInfo FormulaCar { get; set; } = new LicenseCategoryInfo();
 
     /// <summary>
     /// Dirt Oval
@@ -418,6 +394,12 @@ public class LicenseCategoryInfo
     /// </summary>
     [JsonPropertyName("category")]
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Category Name
+    /// </summary>
+    [JsonPropertyName("category_name")]
+    public string CategoryName { get; set; } = string.Empty;
 
     /// <summary>
     /// License Level
@@ -478,6 +460,12 @@ public class LicenseCategoryInfo
     /// </summary>
     [JsonPropertyName("pro_promotable")]
     public bool IsProPromotable { get; set; }
+
+    /// <summary>
+    /// Seq
+    /// </summary>
+    [JsonPropertyName("seq")]
+    public int Seq { get; set; }
 
     /// <summary>
     /// Mpr Num Tts
