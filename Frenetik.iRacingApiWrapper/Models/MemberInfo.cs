@@ -219,7 +219,7 @@ public class MemberInfo
     /// Has Additional Content
     /// </summary>
     [JsonPropertyName("has_additional_content")]
-    public int HasAdditionalContent { get; set; }
+    public bool HasAdditionalContent { get; set; }
 
     /// <summary>
     /// Has Read Tc
