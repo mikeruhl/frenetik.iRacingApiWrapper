@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ApiCoverageAnalyzer": {
+      "commandName": "Project",
+      "commandLineArgs": "--mode quick"
+    }
+  }
+}
