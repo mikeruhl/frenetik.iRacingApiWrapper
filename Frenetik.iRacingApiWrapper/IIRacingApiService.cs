@@ -59,6 +59,42 @@ namespace Frenetik.iRacingApiWrapper
         Task<IEnumerable<Constant>> GetConstantsEventTypes();
 
         /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Oval.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategoryOval();
+
+        /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Sports Car.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategorySportsCar();
+
+        /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Formula Car.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategoryFormulaCar();
+
+        /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Road.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategoryRoad();
+
+        /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Dirt Oval.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategoryDirtOval();
+
+        /// <summary>
+        /// Returns a Stream of a CSV file containing driver stats by Dirt Road.
+        /// </summary>
+        /// <returns></returns>
+        Task<Stream> GetDriverStatsByCategoryDirtRoad();
+
+        /// <summary>
         /// Get Cust League Session Results
         /// </summary>
         /// <param name="mine">If true, return only sessions created by this user.</param>
@@ -72,6 +108,7 @@ namespace Frenetik.iRacingApiWrapper
         /// </summary>
         /// <returns></returns>
         Task<Dictionary<string, Dictionary<string, EndpointDetails>>> GetDoc();
+
 
         /// <summary>
         /// Get hosted combined session by package id

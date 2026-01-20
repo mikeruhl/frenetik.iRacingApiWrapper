@@ -63,6 +63,24 @@ public class IRacingApiService : IIRacingApiService
     public Task<IEnumerable<Constant>> GetConstantsEventTypes() => GetResources<IEnumerable<Constant>>("/constants/event_types", false);
 
     /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryOval() => GetStreamFromResources("/driver_stats_by_category/oval", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategorySportsCar() => GetStreamFromResources("/driver_stats_by_category/sports_car", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryFormulaCar() => GetStreamFromResources("/driver_stats_by_category/formula_car", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryRoad() => GetStreamFromResources("/driver_stats_by_category/road", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryDirtOval() => GetStreamFromResources("/driver_stats_by_category/dirt_oval", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryDirtRoad() => GetStreamFromResources("/driver_stats_by_category/dirt_road", true);
+
+    /// <inheritdoc />
     public async Task<IEnumerable<CarAsset>> GetCarAssets() => (await GetResources<Dictionary<string, CarAsset>>("/car/assets", true)).Values;
 
     /// <inheritdoc />
@@ -295,6 +313,24 @@ public class IRacingApiService : IIRacingApiService
         }
     }
 
+    /// <summary>
+    /// Get stream from the iRacing API for large responses (e.g., CSV files)
+    /// </summary>
+    private async Task<Stream> GetStreamFromResources(string path, bool followLink, IEnumerable<KeyValuePair<string, string>>? parameters = null)
+    {
+        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), parameters);
+
+        if (!followLink)
+        {
+            return await GetStreamFromApi(url);
+        }
+        else
+        {
+            var link = await GetFromApi<ResourceLink>(url);
+            return await GetStreamFromApi(link.Link);
+        }
+    }
+
     private async Task<List<T>> GetAssets<T>(string baseUrl, List<string> assets)
     {
         if (assets.Count == 0)
@@ -324,11 +360,11 @@ public class IRacingApiService : IIRacingApiService
         return results.ToList();
     }
 
-    private async Task<T> GetFromApi<T>(string url)
+    private async Task<HttpResponseMessage> ExecuteApiRequest(string url)
     {
         var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 
-        using var response = await _retryPolicy.ExecuteAsync(async () =>
+        var response = await _retryPolicy.ExecuteAsync(async () =>
         {
             return await httpClient.GetAsync(url);
         });
@@ -359,13 +395,31 @@ public class IRacingApiService : IIRacingApiService
             throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
         }
 
+        return response;
+    }
+
+    private async Task<T> GetFromApi<T>(string url)
+    {
+        using var response = await ExecuteApiRequest(url);
+
         var result = await response.Content.ReadFromJsonAsync<T>();
-        if (result == null)
+        if (EqualityComparer<T>.Default.Equals(result, default))
         {
             throw new InvalidOperationException($"Failed to deserialize response from {url}");
         }
 
-        return result;
+        return result!;
+    }
+
+    private async Task<Stream> GetStreamFromApi(string url)
+    {
+        using var response = await ExecuteApiRequest(url);
+
+        // Copy to MemoryStream so HttpClient can be safely disposed
+        var memoryStream = new MemoryStream();
+        await response.Content.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+        return memoryStream;
     }
 
     private string GetCombinedPath(string path)
