@@ -117,6 +117,9 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<LeagueMembership>> GetLeagueMembership(int customerId, bool? includeLeague = null) => GetResources<List<LeagueMembership>>($"/league/membership", true, BuildParameters(["cust_id", "include_league"], [customerId, includeLeague]));
 
     /// <inheritdoc />
+    public Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null) => GetResources<LeagueRosterResult>($"/league/roster", true, BuildParameters(["league_id", "include_licenses"], [leagueId, includeLicenses]));
+
+    /// <inheritdoc />
     public Task<LeagueSeasonResult> GetLeagueSeasons(int leagueId, bool? retired = null) => GetResources<LeagueSeasonResult>($"/league/seasons", true, BuildParameters(["league_id", "return"], [leagueId, retired]));
 
     /// <inheritdoc />
@@ -130,6 +133,9 @@ public class IRacingApiService : IIRacingApiService
 
     /// <inheritdoc />
     public Task<List<Driver>> LookupDrivers(string searchTerm, int? leagueId = null) => GetResources<List<Driver>>("/lookup/drivers", true, BuildParameters(["search_term", "league_id"], [searchTerm, leagueId]));
+
+    /// <inheritdoc />
+    public Task<LookupFlairResponse> LookupFlairs() => GetResources<LookupFlairResponse>("/lookup/flairs", true);
 
     /// <inheritdoc />
     public Task<List<LookupResult>> Lookup(Dictionary<string, string[]> lookups) => GetResources<List<LookupResult>>("/lookup/get", true, lookups.SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<string, string>(kvp.Key, v))));

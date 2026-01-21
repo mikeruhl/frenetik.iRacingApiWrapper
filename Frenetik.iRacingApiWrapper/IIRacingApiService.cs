@@ -539,6 +539,12 @@ namespace Frenetik.iRacingApiWrapper
         Task<List<Driver>> LookupDrivers(string searchTerm, int? leagueId = null);
 
         /// <summary>
+        /// Lookup Flairs.  Icons are from <see href="https://github.com/lipis/flag-icons/"/>
+        /// </summary>
+        /// <returns></returns>
+        Task<LookupFlairResponse> LookupFlairs();
+
+        /// <summary>
         /// Lookup License Levels
         /// </summary>
         /// <returns></returns>
