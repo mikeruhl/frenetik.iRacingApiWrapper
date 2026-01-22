@@ -1,4 +1,5 @@
-namespace Frenetik.iRacingApiWrapper.Models;
+namespace Frenetik.iRacingApiWrapper.Models.MemberAwards;
+
 /// <summary>
 /// MemberAward
 /// </summary>
@@ -29,10 +30,10 @@ public class MemberAward
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Pdf Url
+    /// Has Pdf
     /// </summary>
-    [JsonPropertyName("pdf_url")]
-    public string PdfUrl { get; set; } = string.Empty;
+    [JsonPropertyName("has_pdf")]
+    public bool HasPdf { get; set; }
 
     /// <summary>
     /// Name
@@ -71,12 +72,6 @@ public class MemberAward
     public string IconBackgroundColor { get; set; } = string.Empty;
 
     /// <summary>
-    /// Certificate File Name
-    /// </summary>
-    [JsonPropertyName("certificate_file_name")]
-    public string CertificateFileName { get; set; } = string.Empty;
-
-    /// <summary>
     /// Weight
     /// </summary>
     [JsonPropertyName("weight")]
@@ -100,4 +95,3 @@ public class MemberAward
     [JsonPropertyName("achievement")]
     public bool Achievement { get; set; }
 }
-

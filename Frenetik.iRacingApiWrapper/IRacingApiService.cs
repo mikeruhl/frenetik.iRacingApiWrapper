@@ -1,15 +1,16 @@
 ﻿using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Enums;
+using Frenetik.iRacingApiWrapper.Exceptions;
 using Frenetik.iRacingApiWrapper.Extensions;
 using Frenetik.iRacingApiWrapper.Models;
+using Frenetik.iRacingApiWrapper.Models.MemberAwards;
 using Frenetik.iRacingApiWrapper.Service;
-using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using System.Globalization;
-using System.Text.Json;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Frenetik.iRacingApiWrapper;
 
@@ -144,7 +145,20 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<LookupLicenseResult>> LookupLicenses() => GetResources<List<LookupLicenseResult>>("/lookup/licenses", true);
 
     /// <inheritdoc />
-    public Task<List<MemberAward>> GetMemberAwards(int? customerId = null) => GetResources<List<MemberAward>>($"/member/awards", true, BuildParameters(["cust_id"], [customerId]));
+    public async Task<MemberAwardsResponse<List<MemberAward>>> GetMemberAwards(int? customerId = null)
+    {
+        var response = await GetResources<MemberAwardsResponse<List<MemberAward>>>("/member/awards", false, BuildParameters(["cust_id"], [customerId]));
+        response.Data = await GetFromApi<List<MemberAward>>(response.DataUrl);
+        return response;
+    }
+
+    /// <inheritdoc />
+    public async Task<MemberAwardsResponse<MemberAwardInstance>> GetMemberAwardInstances(int awardId, int? customerId = null)
+    {
+        var response = await GetResources<MemberAwardsResponse<MemberAwardInstance>>("/member/award_instances", false, BuildParameters(["award_id", "cust_id"], [awardId, customerId]));
+        response.Data = await GetFromApi<MemberAwardInstance>(response.DataUrl);
+        return response;
+    }
 
     /// <inheritdoc />
     public Task<MemberChartData> GetMemberChartData(int categoryId, int chartType, int? customerId = null) => GetResources<MemberChartData>($"/member/chart_data", true, BuildParameters(["category_id", "chart_type", "cust_id"], [categoryId, chartType, customerId]));
