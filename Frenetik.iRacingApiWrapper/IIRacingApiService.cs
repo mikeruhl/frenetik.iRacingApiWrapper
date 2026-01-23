@@ -530,6 +530,12 @@ public interface IIRacingApiService
     Task<TeamResult> GetTeam(int teamId, bool? includeLicenses = null);
 
     /// <summary>
+    /// Get Team Membership (Always the authenticated member.)
+    /// </summary>
+    /// <returns></returns>
+    Task<List<TeamMembershipResult>> GetTeamMembership();
+
+    /// <summary>
     /// Get Time Attack Season Results
     /// </summary>
     /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
@@ -603,4 +609,11 @@ public interface IIRacingApiService
     /// <param name="order">One of asc or desc.  Defaults to asc.</param>
     /// <returns></returns>
     Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, bool? minimumRosterCount = null, bool? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
+
+    /// <summary>
+    /// Get Session Reg Drivers List
+    /// </summary>
+    /// <param name="subsessionId">Subsession Id (required)</param>
+    /// <returns></returns>
+    Task<SessionRegDriversListResult> GetSessionRegDriversList(int subsessionId);
 }
