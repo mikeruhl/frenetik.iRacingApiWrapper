@@ -387,6 +387,13 @@ public interface IIRacingApiService
     Task<List<SeriesSeasonsResult>> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null);
 
     /// <summary>
+    /// Get Series Season Schedule
+    /// </summary>
+    /// <param name="seasonId">Required Season Id</param>
+    /// <returns></returns>
+    Task<List<SeriesSeasonScheduleResult>> GetSeriesSeasonSchedule(int seasonId);
+
+    /// <summary>
     /// Get Series Stats
     /// </summary>
     /// <returns></returns>
