@@ -229,6 +229,10 @@ public class IRacingApiService : IIRacingApiService
         GetResources<SeasonSpectatorSubSessionIdsResult>("/season/spectator_subsessionids", true, BuildParameters(["event_types"], [CreateCsv(eventTypes)]));
 
     /// <inheritdoc />
+    public Task<SeasonSpectatorSubSessionIdsDetailResult> GetSeasonSpectatorSubSessionIdsDetail(IEnumerable<int>? eventTypes = null, IEnumerable<int>? seasonIds = null) =>
+        GetResources<SeasonSpectatorSubSessionIdsDetailResult>("/season/spectator_subsessionids_detail", true, BuildParameters(["event_types", "season_ids"], [CreateCsv(eventTypes), CreateCsv(seasonIds)]));
+
+    /// <inheritdoc />
     public Task<Dictionary<string, SeriesAsset>> GetSeriesAssets() => GetResources<Dictionary<string, SeriesAsset>>("/series/assets", true);
 
     /// <inheritdoc />
@@ -238,7 +242,10 @@ public class IRacingApiService : IIRacingApiService
     public Task<SeriesPastSeasonResult> GetSeriesPastSeasons(int seriesId) => GetResources<SeriesPastSeasonResult>($"/series/past_seasons", true, BuildParameters(["series_id"], [seriesId]));
 
     /// <inheritdoc />
-    public Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null) => GetResources<List<SeriesSeasonsResult>>("/series/seasons", true, BuildParameters(["include_series"], [includeSeries]));
+    public Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<List<SeriesSeasonsResult>>("/series/seasons", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
+
+    /// <inheritdoc />
+    public Task<List<SeriesSeasonsResult>> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<List<SeriesSeasonsResult>>("/series/season_list", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
 
     /// <inheritdoc />
     public Task<List<SeriesStats>> GetSeriesStats() => GetResources<List<SeriesStats>>("/series/stats_series", true);

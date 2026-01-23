@@ -344,6 +344,14 @@ public interface IIRacingApiService
     Task<SeasonSpectatorSubSessionIdsResult> GetSeasonSpectatorSubSessionIds(IEnumerable<int>? eventTypes = null);
 
     /// <summary>
+    /// Get Season Spectator SubSessionIds Detail
+    /// </summary>
+    /// <param name="eventTypes">Types of events to include in the search. Defaults to all.</param>
+    /// <param name="seasonIds">Season Ids.  Defaults to all.</param>
+    /// <returns></returns>
+    Task<SeasonSpectatorSubSessionIdsDetailResult> GetSeasonSpectatorSubSessionIdsDetail(IEnumerable<int>? eventTypes = null, IEnumerable<int>? seasonIds = null);
+
+    /// <summary>
     /// Get Series
     /// </summary>
     /// <returns></returns>
@@ -368,6 +376,15 @@ public interface IIRacingApiService
     /// <param name="includeSeries"></param>
     /// <returns></returns>
     Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null);
+
+    /// <summary>
+    /// Get Series Season List
+    /// </summary>
+    /// <param name="includeSeries"></param>
+    /// <param name="seasonYear"></param>
+    /// <param name="seasonQuarter"></param>
+    /// <returns></returns>
+    Task<List<SeriesSeasonsResult>> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null);
 
     /// <summary>
     /// Get Series Stats
