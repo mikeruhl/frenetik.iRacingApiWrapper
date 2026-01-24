@@ -23,10 +23,10 @@ public class LookupFlairResponse
     public class FlairInfo
     {
         /// <summary>
-        /// Flair ID
+        /// Flair Id
         /// </summary>
         [JsonPropertyName("flair_id")]
-        public int FlairID { get; set; }
+        public int FlairId { get; set; }
         /// <summary>
         /// Flair name
         /// </summary>
