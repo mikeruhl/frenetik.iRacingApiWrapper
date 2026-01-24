@@ -6,7 +6,31 @@ namespace Frenetik.iRacingApiWrapper.Tests;
 public class HttpResponseStreamTests
 {
     [Fact]
-    public async Task Read_ReadsFromUnderlyingStream()
+    public void Read_Synchronous_ReadsFromUnderlyingStream()
+    {
+        // Arrange
+        var testData = "test,data,stream\n1,2,3"u8.ToArray();
+        var memoryStream = new MemoryStream(testData);
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(memoryStream)
+        };
+#pragma warning disable xUnit1031 // Do not use blocking task operations in test method
+        var contentStream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+#pragma warning restore xUnit1031 // Do not use blocking task operations in test method
+        var httpResponseStream = new HttpResponseStream(contentStream, response);
+
+        // Act
+        var buffer = new byte[testData.Length];
+        var bytesRead = httpResponseStream.Read(buffer, 0, buffer.Length);
+
+        // Assert
+        Assert.Equal(testData.Length, bytesRead);
+        Assert.Equal(testData, buffer);
+    }
+
+    [Fact]
+    public async Task ReadAsync_ReadsFromUnderlyingStream()
     {
         // Arrange
         var testData = "test,data,stream\n1,2,3"u8.ToArray();

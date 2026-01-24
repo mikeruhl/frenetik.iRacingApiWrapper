@@ -372,6 +372,103 @@ public class IRacingApiServiceTests
     }
 
     [Fact]
+    public async Task GetStreamFromResources_WithFollowLinkFalse_ReturnsCsvStreamDirectly()
+    {
+        // Arrange
+        var csvData = "header1,header2\ndata1,data2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act - Use reflection to test the private method with followLink = false
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromResources",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object?[] { "/test/path", false, null })!;
+
+        await using var stream = await task;
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.False(stream.CanSeek);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+    }
+
+    [Fact]
+    public async Task GetStreamFromResources_WithFollowLinkTrue_RetrievesLinkThenCsv()
+    {
+        // Arrange
+        var csvData = "col1,col2\nval1,val2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        var requestCount = 0;
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(() =>
+            {
+                requestCount++;
+                if (requestCount == 1)
+                {
+                    // First request returns the resource link
+                    var linkResponse = JsonSerializer.Serialize(new { link = "https://example.com/actual-data.csv" });
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(linkResponse)
+                    };
+                }
+                else
+                {
+                    // Second request returns the actual CSV data
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(csvData)
+                    };
+                }
+            });
+
+        // Act - Use reflection to test the private method with followLink = true
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromResources",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object?[] { "/test/path", true, null })!;
+
+        await using var stream = await task;
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.False(stream.CanSeek);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+        Assert.Equal(2, requestCount); // Verify both requests were made
+    }
+
+    [Fact]
     public async Task GetStreamFromApi_LargeCsvData_StreamsWithoutBuffering()
     {
         // Arrange
