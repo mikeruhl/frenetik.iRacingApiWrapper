@@ -613,6 +613,14 @@ public interface IIRacingApiService
     Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, bool? minimumRosterCount = null, bool? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
 
     /// <summary>
+    /// Get the league roster by id
+    /// </summary>
+    /// <param name="leagueId"></param>
+    /// <param name="includeLicenses"></param>
+    /// <returns></returns>
+    Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null);
+
+    /// <summary>
     /// Get Session Reg Drivers List
     /// </summary>
     /// <param name="subsessionId">Subsession Id (required)</param>
