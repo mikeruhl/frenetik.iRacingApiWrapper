@@ -245,7 +245,7 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<List<SeriesSeasonsResult>>("/series/seasons", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
 
     /// <inheritdoc />
-    public Task<List<SeriesSeasonsResult>> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<List<SeriesSeasonsResult>>("/series/season_list", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
+    public Task<SeriesSeasonListResult> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<SeriesSeasonListResult>("/series/season_list", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
 
     /// <inheritdoc />
     public Task<List<SeriesSeasonScheduleResult>> GetSeriesSeasonSchedule(int seasonId) => GetResources<List<SeriesSeasonScheduleResult>>("/series/season_schedule", true, BuildParameters(["season_id"], [seasonId]));
