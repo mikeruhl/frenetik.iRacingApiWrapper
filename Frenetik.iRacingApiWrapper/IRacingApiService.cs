@@ -396,13 +396,13 @@ public class IRacingApiService : IIRacingApiService
         return results.ToList();
     }
 
-    private async Task<HttpResponseMessage> ExecuteApiRequest(string url)
+    private async Task<HttpResponseMessage> ExecuteApiRequest(string url, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead)
     {
         var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 
         var response = await _retryPolicy.ExecuteAsync(async () =>
         {
-            return await httpClient.GetAsync(url);
+            return await httpClient.GetAsync(url, completionOption);
         });
 
         if (!response.IsSuccessStatusCode)
@@ -456,13 +456,12 @@ public class IRacingApiService : IIRacingApiService
 
     private async Task<Stream> GetStreamFromApi(string url)
     {
-        using var response = await ExecuteApiRequest(url);
+        // Use ResponseHeadersRead to enable true streaming without buffering the entire response
+        var response = await ExecuteApiRequest(url, HttpCompletionOption.ResponseHeadersRead);
 
-        // Copy to MemoryStream so HttpClient can be safely disposed
-        var memoryStream = new MemoryStream();
-        await response.Content.CopyToAsync(memoryStream);
-        memoryStream.Position = 0;
-        return memoryStream;
+        // Return a stream that keeps the HttpResponseMessage alive and disposes it when done
+        var contentStream = await response.Content.ReadAsStreamAsync();
+        return new HttpResponseStream(contentStream, response);
     }
 
     private string GetCombinedPath(string path)
