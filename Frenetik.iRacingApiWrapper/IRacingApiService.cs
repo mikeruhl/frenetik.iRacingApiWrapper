@@ -407,28 +407,35 @@ public class IRacingApiService : IIRacingApiService
 
         if (!response.IsSuccessStatusCode)
         {
-            ErrorResponse? errorResponse = null;
-            string? rawContent = null;
-
             try
             {
-                errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ErrorResponse? errorResponse = null;
+                string? rawContent = null;
+
+                try
+                {
+                    errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                }
+                catch (JsonException)
+                {
+                    rawContent = await response.Content.ReadAsStringAsync();
+                }
+
+                var error = errorResponse?.Error;
+                var message = errorResponse?.Message;
+
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    rawContent ??= await response.Content.ReadAsStringAsync();
+                    message = $"Request to {url} failed with status code {(int)response.StatusCode} ({response.ReasonPhrase}). Response content: {rawContent}";
+                }
+
+                throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
             }
-            catch (JsonException)
+            finally
             {
-                rawContent = await response.Content.ReadAsStringAsync();
+                response.Dispose();
             }
-
-            var error = errorResponse?.Error;
-            var message = errorResponse?.Message;
-
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                rawContent ??= await response.Content.ReadAsStringAsync();
-                message = $"Request to {url} failed with status code {(int)response.StatusCode} ({response.ReasonPhrase}). Response content: {rawContent}";
-            }
-
-            throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
         }
 
         return response;
