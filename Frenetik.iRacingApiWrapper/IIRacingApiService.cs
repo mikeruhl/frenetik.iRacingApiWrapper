@@ -393,7 +393,7 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="seasonId">Required Season Id</param>
     /// <returns></returns>
-    Task<List<SeriesSeasonScheduleResult>> GetSeriesSeasonSchedule(int seasonId);
+    Task<SeriesSeasonScheduleResult> GetSeriesSeasonSchedule(int seasonId);
 
     /// <summary>
     /// Get Series Stats
