@@ -1,5 +1,8 @@
 ﻿namespace Frenetik.iRacingApiWrapper.Models;
 
+/// <summary>
+/// Season Spectator SubSession Ids Detail Result
+/// </summary>
 public class SeasonSpectatorSubSessionIdsDetailResult
 {
     /// <summary>

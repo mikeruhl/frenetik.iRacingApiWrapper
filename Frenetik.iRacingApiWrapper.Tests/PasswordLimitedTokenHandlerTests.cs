@@ -178,8 +178,10 @@ public class PasswordLimitedTokenHandlerTests
     public async Task SendAsync_WithNullToken_ThrowsInvalidOperationException()
     {
         // Arrange
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         _tokenProviderMock.Setup(tp => tp.GetTokenAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
+#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
         var options = Options.Create(_settings);
         var handler = new PasswordLimitedTokenHandler(_tokenProviderMock.Object, options)

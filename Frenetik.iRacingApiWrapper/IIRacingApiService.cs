@@ -371,11 +371,13 @@ public interface IIRacingApiService
     Task<SeriesPastSeasonResult> GetSeriesPastSeasons(int seriesId);
 
     /// <summary>
-    /// Get Series
+    /// Get Series Seasons
     /// </summary>
     /// <param name="includeSeries"></param>
+    /// <param name="seasonYear"></param>
+    /// <param name="seasonQuarter"></param>
     /// <returns></returns>
-    Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null);
+    Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null);
 
     /// <summary>
     /// Get Series Season List
