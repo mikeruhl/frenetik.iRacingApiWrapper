@@ -105,7 +105,7 @@ public interface IIRacingApiService
     /// <param name="mine">If true, return only sessions created by this user.</param>
     /// <param name="packageId">If set, return only sessions using this car or track package ID.</param>
     /// <returns></returns>
-    Task<SessionResult> GetCustLeagueSessionResults(bool mine = false, int? packageId = null);
+    Task<SessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null);
 
     /// <summary>
     /// Gets documentation for all available endpoints, including required and optional parameters.
@@ -120,13 +120,7 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="packageId"></param>
     /// <returns></returns>
-    Task<SessionResult> GetHostedCombinedSession(int packageId);
-
-    /// <summary>
-    /// Get hosted combined sessions
-    /// </summary>
-    /// <returns></returns>
-    Task<SessionResult> GetHostedCombinedSessions();
+    Task<SessionResult> GetHostedCombinedSession(int? packageId);
 
     /// <summary>
     /// Get hosted sessions
@@ -151,7 +145,7 @@ public interface IIRacingApiService
     /// - Only leagues for which the requested customer is an admin and the league roster is not private are returned.</param>
     /// <param name="includeLeague"></param>
     /// <returns></returns>
-    Task<List<LeagueMembership>> GetLeagueMembership(int customerId, bool? includeLeague = null);
+    Task<List<LeagueMembership>> GetLeagueMembership(int? customerId = null, bool? includeLeague = null);
 
     /// <summary>
     /// Returns a League's Seasons
@@ -186,7 +180,7 @@ public interface IIRacingApiService
     /// <param name="customerIds"></param>
     /// <param name="includeLicenses"></param>
     /// <returns></returns>
-    Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool includeLicenses);
+    Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool? includeLicenses = null);
 
     /// <summary>
     /// Get Member Awards
@@ -335,7 +329,7 @@ public interface IIRacingApiService
     /// <param name="from">ISO-8601 offset format. Defaults to the current time. Include sessions with start times up to 3 hours after this time. Times in the past will be rewritten to the current time.</param>
     /// <param name="includeEndAfterFrom">Include sessions which start before 'from' but end after.</param>
     /// <returns></returns>
-    Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTime? from = null, bool? includeEndAfterFrom = null);
+    Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTimeOffset? from = null, bool? includeEndAfterFrom = null);
 
     /// <summary>
     /// Get Season Spectator SubSessionIds
@@ -430,9 +424,9 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <param name="year">Season year; if not supplied the current calendar year (UTC) is used.</param>
-    /// <param name="seasonId">Season (quarter) within the year; if not supplied the recap will be fore the entire year.</param>
+    /// <param name="season">Season (quarter) within the year; if not supplied the recap will be fore the entire year.</param>
     /// <returns></returns>
-    Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? seasonId = null);
+    Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? season = null);
 
     /// <summary>
     /// Get Stats Member Recent Races
@@ -611,7 +605,7 @@ public interface IIRacingApiService
     /// <param name="sort">One of relevance, leaguename, displayname, rostercount. displayname is owners's name. Defaults to relevance.</param>
     /// <param name="order">One of asc or desc.  Defaults to asc.</param>
     /// <returns></returns>
-    Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, bool? minimumRosterCount = null, bool? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
+    Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, int? minimumRosterCount = null, int? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
 
     /// <summary>
     /// Get the league roster by id

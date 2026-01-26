@@ -91,20 +91,17 @@ public class IRacingApiService : IIRacingApiService
     public Task<IEnumerable<CarClass>> GetCarClasses() => GetResources<IEnumerable<CarClass>>("/carclass/get", true);
 
     /// <inheritdoc />
-    public Task<SessionResult> GetHostedCombinedSessions() => GetResources<SessionResult>("/hosted/combined_sessions", true);
-
-    /// <inheritdoc />
-    public Task<SessionResult> GetHostedCombinedSession(int packageId) => GetResources<SessionResult>("/hosted/combined_sessions", true, new Dictionary<string, string> { { "package_Id", packageId.ToString() } });
+    public Task<SessionResult> GetHostedCombinedSession(int? packageId = null) => GetResources<SessionResult>("/hosted/combined_sessions", true, BuildParameters(["package_id"], [packageId]));
 
     /// <inheritdoc />
     public Task<SessionResult> GetHostedSessions() => GetResources<SessionResult>("/hosted/sessions", true);
 
     /// <inheritdoc />
-    public Task<SessionResult> GetCustLeagueSessionResults(bool mine = false, int? packageId = null) => GetResources<SessionResult>("/league/cust_league_sessions", true, BuildParameters(["mine", "package_id"], [mine, packageId]));
+    public Task<SessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null) => GetResources<SessionResult>("/league/cust_league_sessions", true, BuildParameters(["mine", "package_id"], [mine, packageId]));
 
     /// <inheritdoc />
     public Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null,
-        bool? minimumRosterCount = null, bool? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null) =>
+        int? minimumRosterCount = null, int? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null) =>
         GetResources<LeagueResult>("/league/directory", true, BuildParameters(["search", "tag", "restrict_to_member", "restrict_to_recruiting", "restrict_to_friends", "restrict_to_watched", "minimum_roster_count", "maximum_roster_count", "lowerbound", "upperbound", "sort", "order"],
             [search, tag, restrictToMember, restrictToRecruiting, restrictToFriends, restrictToWatched, minimumRosterCount, maximumRosterCount, lowerBound, upperBound, sort?.GetEnumMemberValue(), order?.GetEnumMemberValue()]));
 
@@ -115,7 +112,7 @@ public class IRacingApiService : IIRacingApiService
     public Task<PointsSystemResponse> GetPointsSystems(int leagueId, int? seasonId = null) => GetResources<PointsSystemResponse>($"/league/get_points_systems", true, BuildParameters(["league_id", "season_id"], [leagueId, seasonId]));
 
     /// <inheritdoc />
-    public Task<List<LeagueMembership>> GetLeagueMembership(int customerId, bool? includeLeague = null) => GetResources<List<LeagueMembership>>($"/league/membership", true, BuildParameters(["cust_id", "include_league"], [customerId, includeLeague]));
+    public Task<List<LeagueMembership>> GetLeagueMembership(int? customerId = null, bool? includeLeague = null) => GetResources<List<LeagueMembership>>($"/league/membership", true, BuildParameters(["cust_id", "include_league"], [customerId, includeLeague]));
 
     /// <inheritdoc />
     public Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null) => GetResources<LeagueRosterResult>($"/league/roster", true, BuildParameters(["league_id", "include_licenses"], [leagueId, includeLicenses]));
@@ -164,7 +161,7 @@ public class IRacingApiService : IIRacingApiService
     public Task<MemberChartData> GetMemberChartData(int categoryId, int chartType, int? customerId = null) => GetResources<MemberChartData>($"/member/chart_data", true, BuildParameters(["category_id", "chart_type", "cust_id"], [categoryId, chartType, customerId]));
 
     /// <inheritdoc />
-    public Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool includeLicenses) => GetResources<MembersResult>($"/member/get", true, BuildParameters(["cust_ids", "include_licenses"], [CreateCsv(customerIds), includeLicenses]));
+    public Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool? includeLicenses = null) => GetResources<MembersResult>($"/member/get", true, BuildParameters(["cust_ids", "include_licenses"], [CreateCsv(customerIds), includeLicenses]));
 
     /// <inheritdoc />
     public Task<MemberInfo> GetMemberInfo() => GetResources<MemberInfo>("/member/info", true);
@@ -221,7 +218,7 @@ public class IRacingApiService : IIRacingApiService
         GetResources<SeasonListResult>("/season/list", true, BuildParameters(["season_year", "season_quarter"], [seasonYear, seasonQuarter]));
 
     /// <inheritdoc />
-    public Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTime? from = null, bool? includeEndAfterFrom = null) =>
+    public Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTimeOffset? from = null, bool? includeEndAfterFrom = null) =>
         GetResources<SeasonRaceGuideResults>("season/race_guide", true, BuildParameters(["from", "include_end_after_from"], [from?.ToString(Iso8601DateFormat, CultureInfo.InvariantCulture), includeEndAfterFrom]));
 
     /// <inheritdoc />
@@ -263,7 +260,7 @@ public class IRacingApiService : IIRacingApiService
     public Task<StatsMemberDivision> GetStatsMemberDivision(int seasonId, int eventType) => GetResources<StatsMemberDivision>("/stats/member_division", true, BuildParameters(["season_id", "event_type"], [seasonId, eventType]));
 
     /// <inheritdoc />
-    public Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? seasonId = null) => GetResources<StatsMemberRecapResult>("/stats/member_recap", true, BuildParameters(["cust_id", "year", "season_id"], [customerId, year, seasonId]));
+    public Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? season = null) => GetResources<StatsMemberRecapResult>("/stats/member_recap", true, BuildParameters(["cust_id", "year", "season_id"], [customerId, year, season]));
 
     /// <inheritdoc />
     public Task<StatsMemberRecentRacesResult> GetStatsMemberRecentRaces(int? customerId = null) => GetResources<StatsMemberRecentRacesResult>("/stats/member_recent_races", true, BuildParameters(["cust_id"], [customerId]));
