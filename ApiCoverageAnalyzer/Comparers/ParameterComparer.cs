@@ -2,6 +2,7 @@ using ApiCoverageAnalyzer.Analyzers;
 using ApiCoverageAnalyzer.Utilities;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace ApiCoverageAnalyzer.Comparers;
 
@@ -57,14 +58,20 @@ public class ParameterComparer
             // Check type compatibility
             if (!_typeMapper.AreCompatible(apiParam.Type, matchingParam.ParameterType))
             {
+                var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
                 result.TypeMismatches.Add(new Models.TypeMismatch
                 {
                     Parameter = apiParamName,
                     ApiType = apiParam.Type,
-                    WrapperType = matchingParam.ParameterType.Name
+                    WrapperType = wrapperTypeName
                 });
                 _logger.LogWarning("Type mismatch for parameter {Parameter}: expected {Expected}, got {Actual}",
-                    apiParamName, apiParam.Type, matchingParam.ParameterType.Name);
+                    apiParamName, apiParam.Type, wrapperTypeName);
+            }
+            else
+            {
+                // If it's an enum type, validate that all enum values appear in the API note
+                ValidateEnumValues(matchingParam.ParameterType, apiParam.Note, apiParamName, result);
             }
 
             // Check nullable state matches required state
@@ -72,12 +79,13 @@ public class ParameterComparer
             {
                 var expectedState = apiParam.Required ? "non-nullable" : "nullable";
                 var actualState = (Nullable.GetUnderlyingType(matchingParam.ParameterType) != null || !matchingParam.ParameterType.IsValueType) ? "nullable" : "non-nullable";
+                var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
 
                 result.TypeMismatches.Add(new Models.TypeMismatch
                 {
                     Parameter = apiParamName,
                     ApiType = $"{apiParam.Type} ({expectedState})",
-                    WrapperType = $"{matchingParam.ParameterType.Name} ({actualState})"
+                    WrapperType = $"{wrapperTypeName} ({actualState})"
                 });
                 _logger.LogWarning("Nullable mismatch for parameter {Parameter}: API expects {Expected} but wrapper has {Actual}",
                     apiParamName, expectedState, actualState);
@@ -124,6 +132,64 @@ public class ParameterComparer
     }
 
     /// <summary>
+    /// Get a friendly type name for display (handles Nullable<T> properly)
+    /// </summary>
+    private static string GetFriendlyTypeName(Type type)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(type);
+        if (underlyingType != null)
+        {
+            return $"{underlyingType.Name}?";
+        }
+        return type.Name;
+    }
+
+    /// <summary>
+    /// Validate that enum values match the API documentation
+    /// </summary>
+    private void ValidateEnumValues(Type parameterType, string apiNote, string apiParamName, ParameterAnalysisResult result)
+    {
+        // Unwrap nullable types
+        var actualType = Nullable.GetUnderlyingType(parameterType) ?? parameterType;
+
+        if (!actualType.IsEnum)
+            return;
+
+        // Get all enum values and their EnumMember attribute values
+        var enumValues = Enum.GetValues(actualType);
+        var missingValues = new List<string>();
+
+        foreach (var enumValue in enumValues)
+        {
+            var memberInfo = actualType.GetField(enumValue.ToString()!);
+            if (memberInfo == null)
+                continue;
+
+            // Get the EnumMember attribute
+            var enumMemberAttr = memberInfo.GetCustomAttribute<EnumMemberAttribute>();
+            var expectedValue = enumMemberAttr?.Value ?? enumValue.ToString()!.ToLower();
+
+            // Check if the value appears in the API note (case-insensitive)
+            if (!apiNote.Contains(expectedValue, StringComparison.OrdinalIgnoreCase))
+            {
+                missingValues.Add(expectedValue);
+            }
+        }
+
+        if (missingValues.Any())
+        {
+            result.TypeMismatches.Add(new Models.TypeMismatch
+            {
+                Parameter = apiParamName,
+                ApiType = $"string (missing enum values in note: {string.Join(", ", missingValues)})",
+                WrapperType = actualType.Name
+            });
+            _logger.LogWarning("Enum validation failed for {Parameter}: values {Values} not found in API note",
+                apiParamName, string.Join(", ", missingValues));
+        }
+    }
+
+    /// <summary>
     /// Explicit mappings for API parameter names that don't follow standard conventions
     /// Key: API parameter name (snake_case), Value: Wrapper parameter name (camelCase)
     /// </summary>
@@ -131,6 +197,7 @@ public class ParameterComparer
     {
         // API uses abbreviated form, wrapper uses full form
         { "cust_id", "customerId" },
+        { "cust_ids", "customerIds" },
 
         // Add more explicit mappings here as needed
         // Example: { "api_param_name", "wrapperParamName" }

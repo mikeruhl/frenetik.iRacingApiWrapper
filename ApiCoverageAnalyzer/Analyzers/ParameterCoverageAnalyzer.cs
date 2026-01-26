@@ -1,6 +1,7 @@
 using ApiCoverageAnalyzer.Comparers;
 using ApiCoverageAnalyzer.Models;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace ApiCoverageAnalyzer.Analyzers;
 
@@ -28,6 +29,13 @@ public class ParameterCoverageAnalyzer
 
         foreach (var (path, endpoint) in matchedEndpoints)
         {
+            // Skip parameter validation for methods that use dynamic parameters
+            if (UsesDynamicParameters(endpoint.Method))
+            {
+                _logger.LogDebug("Skipping parameter validation for {Method} - uses dynamic parameters", endpoint.Method.Name);
+                continue;
+            }
+
             var result = _comparer.Compare(endpoint.Parameters, endpoint.Method);
             result.EndpointPath = path;
             results.Add(result);
@@ -41,6 +49,37 @@ public class ParameterCoverageAnalyzer
             coverage, coveredParams, totalParams);
 
         return Task.FromResult(results);
+    }
+
+    /// <summary>
+    /// Check if a method uses dynamic parameters (e.g., Dictionary<string, string[]>)
+    /// that represent flexible query parameters rather than fixed parameters
+    /// </summary>
+    private static bool UsesDynamicParameters(MethodInfo method)
+    {
+        var parameters = method.GetParameters();
+
+        // Check for a single Dictionary<string, string[]> parameter (like the Lookup method)
+        if (parameters.Length == 1)
+        {
+            var param = parameters[0];
+            var paramType = param.ParameterType;
+
+            // Check if it's a Dictionary<string, string[]>
+            if (paramType.IsGenericType &&
+                paramType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                var typeArgs = paramType.GetGenericArguments();
+                if (typeArgs.Length == 2 &&
+                    typeArgs[0] == typeof(string) &&
+                    typeArgs[1] == typeof(string[]))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
 

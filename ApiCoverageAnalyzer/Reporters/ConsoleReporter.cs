@@ -57,9 +57,11 @@ public class ConsoleReporter
             {
                 if (endpoint.ParameterResult == null) continue;
 
+                // Print endpoint path once at the beginning
+                Console.WriteLine($"  ✗ {endpoint.Path}");
+
                 if (endpoint.ParameterResult.MissingParameters.Any())
                 {
-                    Console.WriteLine($"  ✗ {endpoint.Path}");
                     foreach (var param in endpoint.ParameterResult.MissingParameters)
                     {
                         Console.WriteLine($"      - Missing parameter: {param}");
@@ -68,10 +70,6 @@ public class ConsoleReporter
 
                 if (endpoint.ParameterResult.ExtraParameters.Any())
                 {
-                    if (!endpoint.ParameterResult.MissingParameters.Any())
-                    {
-                        Console.WriteLine($"  ✗ {endpoint.Path}");
-                    }
                     foreach (var param in endpoint.ParameterResult.ExtraParameters)
                     {
                         Console.WriteLine($"      - Extra parameter: {param} (not in API)");

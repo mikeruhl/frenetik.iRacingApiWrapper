@@ -16,6 +16,12 @@ public class TypeMapper
         var actualType = Nullable.GetUnderlyingType(dotnetType) ?? dotnetType;
         var typeName = actualType.Name;
 
+        // Handle enum types - enums are compatible with string API types
+        if (actualType.IsEnum)
+        {
+            return apiType.ToLower() is "string" or "str";
+        }
+
         // Handle generic types (IEnumerable<T>, List<T>, etc.)
         if (actualType.IsGenericType)
         {
@@ -63,6 +69,8 @@ public class TypeMapper
 
             // String types
             ("string" or "str", "String") => true,
+            // DateTimeOffset is compatible with string (dates are sent as ISO-8601 strings)
+            ("string" or "str", "DateTimeOffset") => true,
 
             // Boolean types
             ("boolean" or "bool", "Boolean") => true,
