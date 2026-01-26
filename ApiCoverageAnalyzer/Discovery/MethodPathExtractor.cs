@@ -92,8 +92,9 @@ public static class MethodPathExtractor
                 }
             }
 
-            // Find the first string that looks like a path (starts with /)
-            var path = strings.FirstOrDefault(s => s.StartsWith("/"));
+            // Find the first string that looks like an API path
+            // Could start with "/" or be relative like "member/info"
+            var path = strings.FirstOrDefault(s => IsApiPath(s));
 
             return path;
         }
@@ -101,6 +102,36 @@ public static class MethodPathExtractor
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Check if a string looks like an API path
+    /// </summary>
+    private static bool IsApiPath(string str)
+    {
+        if (string.IsNullOrWhiteSpace(str))
+            return false;
+
+        // Starts with "/" is definitely a path
+        if (str.StartsWith("/"))
+            return true;
+
+        // Check if it matches common API path patterns without leading slash
+        // e.g., "member/info", "data/car/get", "season/race_guide"
+        // Must contain at least one "/" and use lowercase with underscores
+        if (str.Contains("/") &&
+            str.All(c => char.IsLower(c) || c == '/' || c == '_' || char.IsDigit(c)))
+        {
+            // Additional check: shouldn't be too long (avoid matching file paths or other strings)
+            // and should have reasonable path segments
+            var parts = str.Split('/');
+            if (parts.Length >= 2 && parts.Length <= 5 && parts.All(p => p.Length > 0 && p.Length < 50))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -115,17 +146,29 @@ public static class MethodPathExtractor
             var path = ExtractPath(method);
             if (!string.IsNullOrEmpty(path))
             {
-                // Normalize path (remove /data prefix if present for matching)
-                var normalizedPath = path.TrimStart('/');
-
-                // Store both the original path and without /data prefix
+                // Store multiple variations of the path for flexible matching
+                // 1. Original path as extracted
                 pathToMethod[path] = method;
+
+                // 2. With leading slash (if it doesn't have one)
+                if (!path.StartsWith("/"))
+                {
+                    pathToMethod["/" + path] = method;
+                }
+
+                // 3. Without leading slash (if it has one)
+                var normalizedPath = path.TrimStart('/');
                 pathToMethod[normalizedPath] = method;
 
-                // Also store without leading /data/
+                // 4. Without /data/ prefix if present
                 if (path.StartsWith("/data/"))
                 {
                     var withoutData = path.Substring(6); // Remove "/data/"
+                    pathToMethod[withoutData] = method;
+                }
+                else if (path.StartsWith("data/"))
+                {
+                    var withoutData = path.Substring(5); // Remove "data/"
                     pathToMethod[withoutData] = method;
                 }
             }

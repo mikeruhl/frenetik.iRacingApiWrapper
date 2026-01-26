@@ -43,9 +43,8 @@ public class ParameterComparer
             // Convert snake_case to camelCase for matching
             var expectedParamName = _naming.ToCamelCase(apiParamName);
 
-            // Find matching method parameter
-            var matchingParam = methodParams.FirstOrDefault(p =>
-                p.Name!.Equals(expectedParamName, StringComparison.OrdinalIgnoreCase));
+            // Find matching method parameter with flexible matching
+            var matchingParam = FindMatchingParameter(methodParams, expectedParamName, apiParamName);
 
             if (matchingParam == null)
             {
@@ -95,6 +94,74 @@ public class ParameterComparer
             result.CoveredParameters++;
         }
 
+        // Check for extra parameters (in wrapper but not in API)
+        foreach (var methodParam in methodParams)
+        {
+            // Try to find this wrapper parameter in the API parameters
+            var foundInApi = false;
+
+            foreach (var (apiParamName, apiParam) in apiParameters)
+            {
+                var expectedParamName = _naming.ToCamelCase(apiParamName);
+                var matchingParam = FindMatchingParameter(new[] { methodParam }, expectedParamName, apiParamName);
+
+                if (matchingParam != null)
+                {
+                    foundInApi = true;
+                    break;
+                }
+            }
+
+            if (!foundInApi)
+            {
+                result.ExtraParameters.Add(methodParam.Name!);
+                _logger.LogWarning("Extra parameter {Parameter} in wrapper method {Method} not found in API",
+                    methodParam.Name, method.Name);
+            }
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// Explicit mappings for API parameter names that don't follow standard conventions
+    /// Key: API parameter name (snake_case), Value: Wrapper parameter name (camelCase)
+    /// </summary>
+    private static readonly Dictionary<string, string> ExplicitParameterMappings = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // API uses abbreviated form, wrapper uses full form
+        { "cust_id", "customerId" },
+
+        // Add more explicit mappings here as needed
+        // Example: { "api_param_name", "wrapperParamName" }
+    };
+
+    /// <summary>
+    /// Find a matching parameter with explicit mapping and fallback to exact match
+    /// </summary>
+    private ParameterInfo? FindMatchingParameter(ParameterInfo[] methodParams, string expectedParamName, string apiParamName)
+    {
+        // Strategy 1: Check explicit mappings first
+        if (ExplicitParameterMappings.TryGetValue(apiParamName, out var mappedName))
+        {
+            var explicitMatch = methodParams.FirstOrDefault(p =>
+                p.Name!.Equals(mappedName, StringComparison.OrdinalIgnoreCase));
+
+            if (explicitMatch != null)
+            {
+                _logger.LogDebug("Matched {ApiParam} to {MethodParam} via explicit mapping",
+                    apiParamName, explicitMatch.Name);
+                return explicitMatch;
+            }
+        }
+
+        // Strategy 2: Exact match (case-insensitive) using converted name
+        var exactMatch = methodParams.FirstOrDefault(p =>
+            p.Name!.Equals(expectedParamName, StringComparison.OrdinalIgnoreCase));
+
+        if (exactMatch != null)
+            return exactMatch;
+
+        return null;
     }
 }

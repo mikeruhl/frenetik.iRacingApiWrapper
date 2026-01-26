@@ -25,6 +25,13 @@ public class TypeMapper
                 genericDef == typeof(IList<>) ||
                 genericDef == typeof(ICollection<>))
             {
+                // Check for "numbers" type - should be IEnumerable<int> or similar int collection
+                if (apiType.ToLower() == "numbers")
+                {
+                    var elementType = actualType.GetGenericArguments()[0];
+                    return elementType == typeof(int) || elementType == typeof(Int32);
+                }
+
                 // Arrays/collections are compatible with "array" or the element type
                 return apiType == "array" || apiType == "list";
             }
@@ -33,6 +40,12 @@ public class TypeMapper
         // Handle array types
         if (actualType.IsArray)
         {
+            // Check for "numbers" type - should be int[]
+            if (apiType.ToLower() == "numbers")
+            {
+                return actualType.GetElementType() == typeof(int);
+            }
+
             return apiType == "array" || apiType == "list";
         }
 
@@ -108,6 +121,7 @@ public class TypeMapper
             "float" => "float",
             "double" => "double",
             "datetime" or "date" => "DateTimeOffset",
+            "numbers" => "IEnumerable<int>",
             "array" or "list" => "List<>",
             "object" or "dictionary" => "object",
             _ => "object"
