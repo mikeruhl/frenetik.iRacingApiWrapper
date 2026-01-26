@@ -201,6 +201,326 @@ public class IRacingApiServiceTests
         Assert.True(maxConcurrent > 1, "Expected some concurrent execution");
     }
 
+    [Fact]
+    public async Task GetStreamFromApi_ReturnsCsvStream()
+    {
+        // Arrange
+        var csvData = "header1,header2\nvalue1,value2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromApi",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object[] { "https://members-ng.iracing.com/data/stats/test" })!;
+
+        await using var stream = await task;
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.True(stream.CanRead);
+        Assert.False(stream.CanSeek);
+        Assert.False(stream.CanWrite);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+    }
+
+    [Fact]
+    public async Task GetStreamFromApi_UsesResponseHeadersRead()
+    {
+        // Arrange
+        var csvData = "id,name\n1,test";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromApi",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object[] { "https://members-ng.iracing.com/data/stats/test" })!;
+
+        await using var stream = await task;
+
+        // Assert - Verify stream is returned without full buffering
+        // The stream should be readable immediately without waiting for full response
+        Assert.NotNull(stream);
+        Assert.IsType<HttpResponseStream>(stream);
+    }
+
+    [Fact]
+    public async Task GetStreamFromApi_StreamDisposal_DisposesHttpResponseMessage()
+    {
+        // Arrange
+        var csvData = "col1,col2\ndata1,data2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromApi",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object[] { "https://members-ng.iracing.com/data/stats/test" })!;
+
+        var stream = await task;
+
+        // Read some data to verify stream works
+        using var reader = new StreamReader(stream);
+        var line = await reader.ReadLineAsync();
+        Assert.Equal("col1,col2", line);
+
+        // Dispose the stream (which should dispose the HttpResponseMessage)
+        await stream.DisposeAsync();
+
+        // Assert - Stream should not be readable after disposal
+        Assert.False(stream.CanRead);
+    }
+
+    [Fact]
+    public async Task GetDriverStatsByCategoryOval_ReturnsStream()
+    {
+        // Arrange
+        var csvData = "driver_id,category,stats\n123,oval,test_data";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        // Mock the link retrieval and then the CSV content
+        var setupCount = 0;
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(() =>
+            {
+                setupCount++;
+                if (setupCount == 1)
+                {
+                    // First call returns the link
+                    var linkResponse = JsonSerializer.Serialize(new { link = "https://example.com/data.csv" });
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(linkResponse)
+                    };
+                }
+                else
+                {
+                    // Second call returns the CSV data
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(csvData)
+                    };
+                }
+            });
+
+        // Act
+        await using var stream = await service.GetDriverStatsByCategoryOval();
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.False(stream.CanSeek);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+    }
+
+    [Fact]
+    public async Task GetStreamFromResources_WithFollowLinkFalse_ReturnsCsvStreamDirectly()
+    {
+        // Arrange
+        var csvData = "header1,header2\ndata1,data2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act - Use reflection to test the private method with followLink = false
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromResources",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object?[] { "/test/path", false, null })!;
+
+        await using var stream = await task;
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.False(stream.CanSeek);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+    }
+
+    [Fact]
+    public async Task GetStreamFromResources_WithFollowLinkTrue_RetrievesLinkThenCsv()
+    {
+        // Arrange
+        var csvData = "col1,col2\nval1,val2";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        var requestCount = 0;
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(() =>
+            {
+                requestCount++;
+                if (requestCount == 1)
+                {
+                    // First request returns the resource link
+                    var linkResponse = JsonSerializer.Serialize(new { link = "https://example.com/actual-data.csv" });
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(linkResponse)
+                    };
+                }
+                else
+                {
+                    // Second request returns the actual CSV data
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(csvData)
+                    };
+                }
+            });
+
+        // Act - Use reflection to test the private method with followLink = true
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromResources",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object?[] { "/test/path", true, null })!;
+
+        await using var stream = await task;
+
+        // Assert
+        Assert.NotNull(stream);
+        Assert.False(stream.CanSeek);
+
+        using var reader = new StreamReader(stream);
+        var content = await reader.ReadToEndAsync();
+        Assert.Equal(csvData, content);
+        Assert.Equal(2, requestCount); // Verify both requests were made
+    }
+
+    [Fact]
+    public async Task GetStreamFromApi_LargeCsvData_StreamsWithoutBuffering()
+    {
+        // Arrange
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        // Create large CSV data (simulate a large response)
+        var largeData = new System.Text.StringBuilder();
+        largeData.AppendLine("id,name,value");
+        for (int i = 0; i < 10000; i++)
+        {
+            largeData.AppendLine($"{i},item{i},value{i}");
+        }
+        var csvData = largeData.ToString();
+
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(csvData)
+            });
+
+        // Act
+        var getStreamMethod = typeof(IRacingApiService).GetMethod("GetStreamFromApi",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<Stream>)getStreamMethod!.Invoke(
+            service,
+            new object[] { "https://members-ng.iracing.com/data/stats/test" })!;
+
+        await using var stream = await task;
+
+        // Assert - Read line by line to verify streaming works
+        using var reader = new StreamReader(stream);
+        var header = await reader.ReadLineAsync();
+        Assert.Equal("id,name,value", header);
+
+        var lineCount = 0;
+        string? line;
+        while ((line = await reader.ReadLineAsync()) != null)
+        {
+            lineCount++;
+        }
+
+        Assert.Equal(10000, lineCount);
+    }
+
     private class TestAssetResponse
     {
         public int Id { get; set; }

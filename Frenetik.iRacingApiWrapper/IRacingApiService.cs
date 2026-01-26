@@ -1,15 +1,16 @@
 ﻿using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Enums;
+using Frenetik.iRacingApiWrapper.Exceptions;
 using Frenetik.iRacingApiWrapper.Extensions;
 using Frenetik.iRacingApiWrapper.Models;
+using Frenetik.iRacingApiWrapper.Models.MemberAwards;
 using Frenetik.iRacingApiWrapper.Service;
-using Frenetik.iRacingApiWrapper.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
 using System.Globalization;
-using System.Text.Json;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Frenetik.iRacingApiWrapper;
 
@@ -63,6 +64,24 @@ public class IRacingApiService : IIRacingApiService
     public Task<IEnumerable<Constant>> GetConstantsEventTypes() => GetResources<IEnumerable<Constant>>("/constants/event_types", false);
 
     /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryOval() => GetStreamFromResources("/driver_stats_by_category/oval", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategorySportsCar() => GetStreamFromResources("/driver_stats_by_category/sports_car", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryFormulaCar() => GetStreamFromResources("/driver_stats_by_category/formula_car", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryRoad() => GetStreamFromResources("/driver_stats_by_category/road", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryDirtOval() => GetStreamFromResources("/driver_stats_by_category/dirt_oval", true);
+
+    /// <inheritdoc />
+    public Task<Stream> GetDriverStatsByCategoryDirtRoad() => GetStreamFromResources("/driver_stats_by_category/dirt_road", true);
+
+    /// <inheritdoc />
     public async Task<IEnumerable<CarAsset>> GetCarAssets() => (await GetResources<Dictionary<string, CarAsset>>("/car/assets", true)).Values;
 
     /// <inheritdoc />
@@ -99,6 +118,9 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<LeagueMembership>> GetLeagueMembership(int customerId, bool? includeLeague = null) => GetResources<List<LeagueMembership>>($"/league/membership", true, BuildParameters(["cust_id", "include_league"], [customerId, includeLeague]));
 
     /// <inheritdoc />
+    public Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null) => GetResources<LeagueRosterResult>($"/league/roster", true, BuildParameters(["league_id", "include_licenses"], [leagueId, includeLicenses]));
+
+    /// <inheritdoc />
     public Task<LeagueSeasonResult> GetLeagueSeasons(int leagueId, bool? retired = null) => GetResources<LeagueSeasonResult>($"/league/seasons", true, BuildParameters(["league_id", "return"], [leagueId, retired]));
 
     /// <inheritdoc />
@@ -114,13 +136,29 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<Driver>> LookupDrivers(string searchTerm, int? leagueId = null) => GetResources<List<Driver>>("/lookup/drivers", true, BuildParameters(["search_term", "league_id"], [searchTerm, leagueId]));
 
     /// <inheritdoc />
+    public Task<LookupFlairResponse> LookupFlairs() => GetResources<LookupFlairResponse>("/lookup/flairs", true);
+
+    /// <inheritdoc />
     public Task<List<LookupResult>> Lookup(Dictionary<string, string[]> lookups) => GetResources<List<LookupResult>>("/lookup/get", true, lookups.SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<string, string>(kvp.Key, v))));
 
     /// <inheritdoc />
     public Task<List<LookupLicenseResult>> LookupLicenses() => GetResources<List<LookupLicenseResult>>("/lookup/licenses", true);
 
     /// <inheritdoc />
-    public Task<List<MemberAward>> GetMemberAwards(int? customerId = null) => GetResources<List<MemberAward>>($"/member/awards", true, BuildParameters(["cust_id"], [customerId]));
+    public async Task<MemberAwardsResponse<List<MemberAward>>> GetMemberAwards(int? customerId = null)
+    {
+        var response = await GetResources<MemberAwardsResponse<List<MemberAward>>>("/member/awards", false, BuildParameters(["cust_id"], [customerId]));
+        response.Data = await GetFromApi<List<MemberAward>>(response.DataUrl);
+        return response;
+    }
+
+    /// <inheritdoc />
+    public async Task<MemberAwardsResponse<MemberAwardInstance>> GetMemberAwardInstances(int awardId, int? customerId = null)
+    {
+        var response = await GetResources<MemberAwardsResponse<MemberAwardInstance>>("/member/award_instances", false, BuildParameters(["award_id", "cust_id"], [awardId, customerId]));
+        response.Data = await GetFromApi<MemberAwardInstance>(response.DataUrl);
+        return response;
+    }
 
     /// <inheritdoc />
     public Task<MemberChartData> GetMemberChartData(int categoryId, int chartType, int? customerId = null) => GetResources<MemberChartData>($"/member/chart_data", true, BuildParameters(["category_id", "chart_type", "cust_id"], [categoryId, chartType, customerId]));
@@ -191,6 +229,10 @@ public class IRacingApiService : IIRacingApiService
         GetResources<SeasonSpectatorSubSessionIdsResult>("/season/spectator_subsessionids", true, BuildParameters(["event_types"], [CreateCsv(eventTypes)]));
 
     /// <inheritdoc />
+    public Task<SeasonSpectatorSubSessionIdsDetailResult> GetSeasonSpectatorSubSessionIdsDetail(IEnumerable<int>? eventTypes = null, IEnumerable<int>? seasonIds = null) =>
+        GetResources<SeasonSpectatorSubSessionIdsDetailResult>("/season/spectator_subsessionids_detail", true, BuildParameters(["event_types", "season_ids"], [CreateCsv(eventTypes), CreateCsv(seasonIds)]));
+
+    /// <inheritdoc />
     public Task<Dictionary<string, SeriesAsset>> GetSeriesAssets() => GetResources<Dictionary<string, SeriesAsset>>("/series/assets", true);
 
     /// <inheritdoc />
@@ -200,7 +242,13 @@ public class IRacingApiService : IIRacingApiService
     public Task<SeriesPastSeasonResult> GetSeriesPastSeasons(int seriesId) => GetResources<SeriesPastSeasonResult>($"/series/past_seasons", true, BuildParameters(["series_id"], [seriesId]));
 
     /// <inheritdoc />
-    public Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null) => GetResources<List<SeriesSeasonsResult>>("/series/seasons", true, BuildParameters(["include_series"], [includeSeries]));
+    public Task<List<SeriesSeasonsResult>> GetSeriesSeasons(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<List<SeriesSeasonsResult>>("/series/seasons", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
+
+    /// <inheritdoc />
+    public Task<SeriesSeasonListResult> GetSeriesSeasonList(bool? includeSeries = null, int? seasonYear = null, int? seasonQuarter = null) => GetResources<SeriesSeasonListResult>("/series/season_list", true, BuildParameters(["include_series", "season_year", "season_quarter"], [includeSeries, seasonYear, seasonQuarter]));
+
+    /// <inheritdoc />
+    public Task<SeriesSeasonScheduleResult> GetSeriesSeasonSchedule(int seasonId) => GetResources<SeriesSeasonScheduleResult>("/series/season_schedule", true, BuildParameters(["season_id"], [seasonId]));
 
     /// <inheritdoc />
     public Task<List<SeriesStats>> GetSeriesStats() => GetResources<List<SeriesStats>>("/series/stats_series", true);
@@ -257,6 +305,12 @@ public class IRacingApiService : IIRacingApiService
     /// <inheritdoc />
     public Task<TeamResult> GetTeam(int teamId, bool? includeLicenses = null) => GetResources<TeamResult>($"/team/get", true, BuildParameters(["team_id", "include_licenses"], [teamId, includeLicenses]));
 
+    /// <inheritdoc />
+    public Task<List<TeamMembershipResult>> GetTeamMembership() => GetResources<List<TeamMembershipResult>>("/team/membership", true);
+
+    /// <inheritdoc />
+    public Task<SessionRegDriversListResult> GetSessionRegDriversList(int subsessionId) => GetResources<SessionRegDriversListResult>("/session/reg_drivers_list", true, BuildParameters(["subsession_id"], [subsessionId]));
+
     //TODO: Complete /data/time_attack/member_season_results
 
     /// <inheritdoc />
@@ -295,6 +349,24 @@ public class IRacingApiService : IIRacingApiService
         }
     }
 
+    /// <summary>
+    /// Get stream from the iRacing API for large responses (e.g., CSV files)
+    /// </summary>
+    private async Task<Stream> GetStreamFromResources(string path, bool followLink, IEnumerable<KeyValuePair<string, string>>? parameters = null)
+    {
+        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), parameters);
+
+        if (!followLink)
+        {
+            return await GetStreamFromApi(url);
+        }
+        else
+        {
+            var link = await GetFromApi<ResourceLink>(url);
+            return await GetStreamFromApi(link.Link);
+        }
+    }
+
     private async Task<List<T>> GetAssets<T>(string baseUrl, List<string> assets)
     {
         if (assets.Count == 0)
@@ -324,48 +396,72 @@ public class IRacingApiService : IIRacingApiService
         return results.ToList();
     }
 
-    private async Task<T> GetFromApi<T>(string url)
+    private async Task<HttpResponseMessage> ExecuteApiRequest(string url, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead)
     {
         var httpClient = _httpClientFactory.CreateClient(_httpClientName);
 
-        using var response = await _retryPolicy.ExecuteAsync(async () =>
+        var response = await _retryPolicy.ExecuteAsync(async () =>
         {
-            return await httpClient.GetAsync(url);
+            return await httpClient.GetAsync(url, completionOption);
         });
 
         if (!response.IsSuccessStatusCode)
         {
-            ErrorResponse? errorResponse = null;
-            string? rawContent = null;
-
             try
             {
-                errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ErrorResponse? errorResponse = null;
+                string? rawContent = null;
+
+                try
+                {
+                    errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                }
+                catch (JsonException)
+                {
+                    rawContent = await response.Content.ReadAsStringAsync();
+                }
+
+                var error = errorResponse?.Error;
+                var message = errorResponse?.Message;
+
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    rawContent ??= await response.Content.ReadAsStringAsync();
+                    message = $"Request to {url} failed with status code {(int)response.StatusCode} ({response.ReasonPhrase}). Response content: {rawContent}";
+                }
+
+                throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
             }
-            catch (JsonException)
+            finally
             {
-                rawContent = await response.Content.ReadAsStringAsync();
+                response.Dispose();
             }
-
-            var error = errorResponse?.Error;
-            var message = errorResponse?.Message;
-
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                rawContent ??= await response.Content.ReadAsStringAsync();
-                message = $"Request to {url} failed with status code {(int)response.StatusCode} ({response.ReasonPhrase}). Response content: {rawContent}";
-            }
-
-            throw new ErrorResponseException(response.StatusCode, error ?? string.Empty, message);
         }
 
+        return response;
+    }
+
+    private async Task<T> GetFromApi<T>(string url)
+    {
+        using var response = await ExecuteApiRequest(url);
+
         var result = await response.Content.ReadFromJsonAsync<T>();
-        if (result == null)
+        if (EqualityComparer<T>.Default.Equals(result, default))
         {
             throw new InvalidOperationException($"Failed to deserialize response from {url}");
         }
 
-        return result;
+        return result!;
+    }
+
+    private async Task<Stream> GetStreamFromApi(string url)
+    {
+        // Use ResponseHeadersRead to enable true streaming without buffering the entire response
+        var response = await ExecuteApiRequest(url, HttpCompletionOption.ResponseHeadersRead);
+
+        // Return a stream that keeps the HttpResponseMessage alive and disposes it when done
+        var contentStream = await response.Content.ReadAsStreamAsync();
+        return new HttpResponseStream(contentStream, response);
     }
 
     private string GetCombinedPath(string path)
