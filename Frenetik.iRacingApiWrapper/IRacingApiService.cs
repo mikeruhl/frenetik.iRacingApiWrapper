@@ -311,7 +311,10 @@ public class IRacingApiService : IIRacingApiService
     /// <inheritdoc />
     public Task<SessionRegDriversListResult> GetSessionRegDriversList(int subsessionId) => GetResources<SessionRegDriversListResult>("/session/reg_drivers_list", true, BuildParameters(["subsession_id"], [subsessionId]));
 
-    //TODO: Complete /data/time_attack/member_season_results
+    //TODO: Find real return type for /time_attack/member_season_results
+
+    /// <inheritdoc />
+    public Task<JsonElement> GetTimeAttackMemberSeasonResults(int TaCompSeasonId) => GetResources<JsonElement>("/time_attack/member_season_results", true, BuildParameters(["ta_comp_season_id"], [TaCompSeasonId]));
 
     /// <inheritdoc />
     public Task<Dictionary<string, TrackDetailsResult>> GetTrackAssets() => GetResources<Dictionary<string, TrackDetailsResult>>("/track/assets", true);

@@ -1,6 +1,7 @@
 ﻿using Frenetik.iRacingApiWrapper.Enums;
 using Frenetik.iRacingApiWrapper.Models;
 using Frenetik.iRacingApiWrapper.Models.MemberAwards;
+using System.Text.Json;
 
 namespace Frenetik.iRacingApiWrapper;
 
@@ -626,4 +627,11 @@ public interface IIRacingApiService
     /// <param name="subsessionId">Subsession Id (required)</param>
     /// <returns></returns>
     Task<SessionRegDriversListResult> GetSessionRegDriversList(int subsessionId);
+
+    /// <summary>
+    /// Get Time Attack Member Season Results
+    /// </summary>
+    /// <param name="TaCompSeasonId"></param>
+    /// <returns></returns>
+    Task<JsonElement> GetTimeAttackMemberSeasonResults(int TaCompSeasonId);
 }
