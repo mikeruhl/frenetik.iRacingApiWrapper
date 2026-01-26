@@ -13,6 +13,7 @@ A comprehensive C# wrapper for the iRacing API with built-in OAuth 2.0 authentic
 - [Quick Start](#quick-start)
 - [Authentication Patterns](#authentication-patterns)
 - [Configuration](#configuration)
+- [Working with CSV Streams](#working-with-csv-streams)
 - [Example Projects](#example-projects)
 - [Contributing](#contributing)
 - [Additional Resources](#additional-resources)
@@ -271,6 +272,45 @@ catch (ErrorResponseException ex)
         ex.ResultCode, ex.Error, ex.Message);
 }
 ```
+
+## Working with CSV Streams
+
+Several API methods return large CSV datasets as `Stream` to avoid loading entire responses into memory:
+
+```csharp
+// Driver stats by category
+await api.GetDriverStatsByCategoryOval();
+await api.GetDriverStatsByCategorySportsCar();
+await api.GetDriverStatsByCategoryFormulaCar();
+await api.GetDriverStatsByCategoryRoad();
+await api.GetDriverStatsByCategoryDirtOval();
+await api.GetDriverStatsByCategoryDirtRoad();
+```
+
+### Usage
+
+```csharp
+using var stream = await api.GetDriverStatsByCategoryOval();
+using var reader = new StreamReader(stream);
+
+// Read CSV header
+var header = await reader.ReadLineAsync();
+
+// Process line-by-line to minimize memory usage
+string? line;
+while ((line = await reader.ReadLineAsync()) != null)
+{
+    // Process CSV line
+}
+```
+
+### Important Notes
+
+- **Format**: Returns CSV data
+- **Forward-only**: Streams cannot be seeked or rewound
+- **Non-seekable**: `CanSeek` is `false`, `Position` and `Length` throw `NotSupportedException`
+- **Memory efficient**: Data is streamed directly from the HTTP response without buffering
+- **Always dispose**: Use `using` statements to ensure proper cleanup
 
 ## Example Projects
 
