@@ -68,6 +68,22 @@ public class ParameterComparer
                     apiParamName, apiParam.Type, matchingParam.ParameterType.Name);
             }
 
+            // Check nullable state matches required state
+            if (!_typeMapper.IsNullableStateCorrect(matchingParam.ParameterType, apiParam.Required))
+            {
+                var expectedState = apiParam.Required ? "non-nullable" : "nullable";
+                var actualState = (Nullable.GetUnderlyingType(matchingParam.ParameterType) != null || !matchingParam.ParameterType.IsValueType) ? "nullable" : "non-nullable";
+
+                result.TypeMismatches.Add(new Models.TypeMismatch
+                {
+                    Parameter = apiParamName,
+                    ApiType = $"{apiParam.Type} ({expectedState})",
+                    WrapperType = $"{matchingParam.ParameterType.Name} ({actualState})"
+                });
+                _logger.LogWarning("Nullable mismatch for parameter {Parameter}: API expects {Expected} but wrapper has {Actual}",
+                    apiParamName, expectedState, actualState);
+            }
+
             // Check required vs optional
             if (apiParam.Required && matchingParam.HasDefaultValue)
             {

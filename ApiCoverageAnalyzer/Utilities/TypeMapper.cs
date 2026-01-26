@@ -59,8 +59,7 @@ public class TypeMapper
             ("double" or "float", "Double") => true,
             ("decimal" or "float" or "double", "Decimal") => true,
 
-            // Date/Time types
-            ("datetime" or "date" or "timestamp", "DateTime") => true,
+            // Date/Time types - enforce DateTimeOffset for ISO-8601 dates
             ("datetime" or "date" or "timestamp", "DateTimeOffset") => true,
 
             // Object/dictionary types
@@ -70,6 +69,30 @@ public class TypeMapper
             // Default: not compatible
             _ => false
         };
+    }
+
+    /// <summary>
+    /// Check if the nullable state of a .NET type matches the required state of an API parameter
+    /// </summary>
+    /// <param name="dotnetType">The .NET parameter type</param>
+    /// <param name="isRequired">Whether the API parameter is required</param>
+    /// <returns>True if nullable state matches requirement, false otherwise</returns>
+    public bool IsNullableStateCorrect(Type dotnetType, bool isRequired)
+    {
+        var isNullable = Nullable.GetUnderlyingType(dotnetType) != null || !dotnetType.IsValueType;
+
+        if (isRequired)
+        {
+            if (dotnetType.IsValueType)
+            {
+                return !isNullable;
+            }
+            return true;
+        }
+        else
+        {
+            return isNullable;
+        }
     }
 
     /// <summary>
@@ -84,7 +107,7 @@ public class TypeMapper
             "boolean" or "bool" => "bool",
             "float" => "float",
             "double" => "double",
-            "datetime" or "date" => "DateTime",
+            "datetime" or "date" => "DateTimeOffset",
             "array" or "list" => "List<>",
             "object" or "dictionary" => "object",
             _ => "object"

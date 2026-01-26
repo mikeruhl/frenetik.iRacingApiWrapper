@@ -52,7 +52,8 @@ public class EndpointComparer
                         p => p.Key,
                         p => new EndpointParameter
                         {
-                            Type = p.Value.Type,
+                            // Override type to datetime if note indicates ISO-8601 date
+                            Type = IsDateType(p.Value.Note) ? "datetime" : p.Value.Type,
                             Note = p.Value.Note,
                             Required = p.Value.Required
                         })
@@ -77,6 +78,11 @@ public class EndpointComparer
     private static string ExtractPath(string url)
     {
         return new Uri(url).AbsolutePath.Replace("/data", "");
+    }
+
+    private static bool IsDateType(string note)
+    {
+        return !string.IsNullOrEmpty(note) && note.Contains("ISO-8601 UTC time zero offset", StringComparison.OrdinalIgnoreCase);
     }
 
     private MethodInfo? FindMatchingMethod(
