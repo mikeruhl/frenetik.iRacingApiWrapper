@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ApiCoverageAnalyzer;
 
@@ -20,7 +21,9 @@ class Program
         // Build host with DI
         var builder = Host.CreateApplicationBuilder(args);
 
-        builder.Configuration.AddUserSecrets<Program>();
+        builder.Configuration
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddUserSecrets<Program>();
 
         // Configure logging based on verbosity
         var verbose = HasArg(args, "--verbose") || HasArg(args, "-v");
@@ -46,8 +49,13 @@ class Program
             options.Scope = builder.Configuration["OAuth:Scope"] ?? "iracing.auth";
         });
 
+        // Configure analyzer settings
+        builder.Services.Configure<AnalyzerSettings>(
+            builder.Configuration.GetSection(nameof(AnalyzerSettings)));
+
         // Register discovery components
         builder.Services.AddSingleton<ApiEndpointDiscovery>();
+        builder.Services.AddSingleton<MethodPathExtractor>();
         builder.Services.AddSingleton<WrapperMethodDiscovery>();
         builder.Services.AddSingleton<ModelDiscovery>();
 
@@ -60,22 +68,21 @@ class Program
         builder.Services.AddSingleton<ParameterCoverageAnalyzer>();
         builder.Services.AddSingleton<CoverageCoordinator>();
 
-        // Register reporters
-        builder.Services.AddSingleton<ConsoleReporter>();
-
         // Register utilities
         builder.Services.AddSingleton<NamingConventions>();
-        builder.Services.AddSingleton<TypeMapper>();
 
         var host = builder.Build();
+
+        // Get analyzer settings for defaults
+        var analyzerSettings = host.Services.GetRequiredService<IOptions<AnalyzerSettings>>().Value;
 
         // Simple argument parsing
         var mode = GetArgValue(args, "--mode") ?? "quick";
         var output = GetArgValue(args, "--output");
         var format = GetArgValue(args, "--format") ?? "console";
-        var checkThreshold = HasArg(args, "--check-threshold");
-        var endpointMin = double.Parse(GetArgValue(args, "--endpoint-min") ?? "100.0");
-        var parameterMin = double.Parse(GetArgValue(args, "--parameter-min") ?? "100.0");
+        var checkThreshold = HasArg(args, "--check-threshold") || analyzerSettings.FailOnThresholdViolation;
+        var endpointMin = double.Parse(GetArgValue(args, "--endpoint-min") ?? analyzerSettings.DefaultEndpointThreshold.ToString());
+        var parameterMin = double.Parse(GetArgValue(args, "--parameter-min") ?? analyzerSettings.DefaultParameterThreshold.ToString());
 
         // Run coverage analysis
         var coordinator = host.Services.GetRequiredService<CoverageCoordinator>();

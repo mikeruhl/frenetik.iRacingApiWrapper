@@ -8,41 +8,28 @@ namespace ApiCoverageAnalyzer.Analyzers;
 /// <summary>
 /// Analyzes endpoint coverage by comparing API endpoints to wrapper methods
 /// </summary>
-public class EndpointCoverageAnalyzer
+public class EndpointCoverageAnalyzer(
+    ApiEndpointDiscovery apiDiscovery,
+    WrapperMethodDiscovery wrapperDiscovery,
+    EndpointComparer comparer,
+    ILogger<EndpointCoverageAnalyzer> logger)
 {
-    private readonly ApiEndpointDiscovery _apiDiscovery;
-    private readonly WrapperMethodDiscovery _wrapperDiscovery;
-    private readonly EndpointComparer _comparer;
-    private readonly ILogger<EndpointCoverageAnalyzer> _logger;
-
-    public EndpointCoverageAnalyzer(
-        ApiEndpointDiscovery apiDiscovery,
-        WrapperMethodDiscovery wrapperDiscovery,
-        EndpointComparer comparer,
-        ILogger<EndpointCoverageAnalyzer> logger)
-    {
-        _apiDiscovery = apiDiscovery;
-        _wrapperDiscovery = wrapperDiscovery;
-        _comparer = comparer;
-        _logger = logger;
-    }
-
     public async Task<EndpointAnalysisResult> AnalyzeAsync()
     {
-        _logger.LogInformation("Analyzing endpoint coverage...");
+        logger.LogInformation("Analyzing endpoint coverage...");
 
         // Discover API endpoints
-        var apiEndpoints = await _apiDiscovery.DiscoverAsync();
-        _logger.LogInformation("Discovered {Count} API endpoints", apiEndpoints.Count);
+        var apiEndpoints = await apiDiscovery.DiscoverAsync();
+        logger.LogInformation("Discovered {Count} API endpoints", apiEndpoints.Count);
 
         // Discover wrapper methods
-        var wrapperMethods = _wrapperDiscovery.Discover();
-        _logger.LogInformation("Discovered {Count} wrapper methods", wrapperMethods.Count);
+        var wrapperMethods = wrapperDiscovery.Discover();
+        logger.LogInformation("Discovered {Count} wrapper methods", wrapperMethods.Count);
 
         // Compare and match
-        var result = _comparer.Compare(apiEndpoints, wrapperMethods);
+        var result = comparer.Compare(apiEndpoints, wrapperMethods);
 
-        _logger.LogInformation("Endpoint coverage: {Coverage}% ({Covered}/{Total})",
+        logger.LogInformation("Endpoint coverage: {Coverage}% ({Covered}/{Total})",
             result.CoveragePercentage, result.CoveredEndpoints, result.TotalEndpoints);
 
         return result;

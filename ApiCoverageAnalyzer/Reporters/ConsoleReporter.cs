@@ -6,16 +6,9 @@ namespace ApiCoverageAnalyzer.Reporters;
 /// <summary>
 /// Reports coverage results to the console
 /// </summary>
-public class ConsoleReporter
+public class ConsoleReporter()
 {
-    private readonly ILogger<ConsoleReporter> _logger;
-
-    public ConsoleReporter(ILogger<ConsoleReporter> logger)
-    {
-        _logger = logger;
-    }
-
-    public void Report(CoverageReport report)
+    public static void Report(CoverageReport report)
     {
         Console.WriteLine();
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
@@ -43,7 +36,7 @@ public class ConsoleReporter
 
         // Parameter issues
         var parameterIssues = report.EndpointResults
-            .Where(e => e.ParameterResult != null &&
+            .Where(e => e.ParameterResult is not null &&
                        (e.ParameterResult.MissingParameters.Any() ||
                         e.ParameterResult.ExtraParameters.Any() ||
                         e.ParameterResult.TypeMismatches.Any() ||
@@ -55,7 +48,7 @@ public class ConsoleReporter
             Console.WriteLine($"Parameter Issues ({parameterIssues.Count} endpoints):");
             foreach (var endpoint in parameterIssues)
             {
-                if (endpoint.ParameterResult == null) continue;
+                if (endpoint.ParameterResult is null) continue;
 
                 // Print endpoint path once at the beginning
                 Console.WriteLine($"  ✗ {endpoint.Path}");
@@ -109,7 +102,7 @@ public class ConsoleReporter
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
     }
 
-    private string GetStatusSymbol(double coverage)
+    private static string GetStatusSymbol(double coverage)
     {
         return coverage >= 100.0 ? "✓" :
                coverage >= 95.0 ? "⚠" :

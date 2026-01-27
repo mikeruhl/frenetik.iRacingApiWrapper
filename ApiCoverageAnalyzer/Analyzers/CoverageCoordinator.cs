@@ -7,25 +7,11 @@ namespace ApiCoverageAnalyzer.Analyzers;
 /// <summary>
 /// Coordinates all coverage analyzers and generates reports
 /// </summary>
-public class CoverageCoordinator
+public class CoverageCoordinator(
+    EndpointCoverageAnalyzer endpointAnalyzer,
+    ParameterCoverageAnalyzer parameterAnalyzer,
+    ILogger<CoverageCoordinator> logger)
 {
-    private readonly EndpointCoverageAnalyzer _endpointAnalyzer;
-    private readonly ParameterCoverageAnalyzer _parameterAnalyzer;
-    private readonly ConsoleReporter _consoleReporter;
-    private readonly ILogger<CoverageCoordinator> _logger;
-
-    public CoverageCoordinator(
-        EndpointCoverageAnalyzer endpointAnalyzer,
-        ParameterCoverageAnalyzer parameterAnalyzer,
-        ConsoleReporter consoleReporter,
-        ILogger<CoverageCoordinator> logger)
-    {
-        _endpointAnalyzer = endpointAnalyzer;
-        _parameterAnalyzer = parameterAnalyzer;
-        _consoleReporter = consoleReporter;
-        _logger = logger;
-    }
-
     public async Task RunAsync(
         string mode,
         string? output,
@@ -34,7 +20,7 @@ public class CoverageCoordinator
         double endpointMin,
         double parameterMin)
     {
-        _logger.LogInformation("Starting coverage analysis in {Mode} mode", mode);
+        logger.LogInformation("Starting coverage analysis in {Mode} mode", mode);
 
         try
         {
@@ -44,19 +30,19 @@ public class CoverageCoordinator
             if (mode == "quick")
             {
                 // Run static analysis only
-                _logger.LogInformation("Running static analysis (endpoints + parameters)...");
+                logger.LogInformation("Running static analysis (endpoints + parameters)...");
                 await RunStaticAnalysisAsync(report);
             }
             else if (mode == "full")
             {
                 // Run static + dynamic analysis
-                _logger.LogInformation("Running full analysis (static + dynamic)...");
+                logger.LogInformation("Running full analysis (static + dynamic)...");
                 await RunStaticAnalysisAsync(report);
-                _logger.LogInformation("Dynamic analysis not yet implemented");
+                logger.LogInformation("Dynamic analysis not yet implemented");
             }
 
-            // Display report
-            _consoleReporter.Report(report);
+            // Display report based on format
+            GenerateReport(report, format, output);
 
             // Check thresholds if requested
             if (checkThreshold)
@@ -65,11 +51,11 @@ public class CoverageCoordinator
                 Environment.ExitCode = passed ? 0 : 1;
             }
 
-            _logger.LogInformation("Coverage analysis completed");
+            logger.LogInformation("Coverage analysis completed");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Coverage analysis failed");
+            logger.LogError(ex, "Coverage analysis failed");
             Environment.ExitCode = 1;
         }
     }
@@ -77,10 +63,10 @@ public class CoverageCoordinator
     private async Task RunStaticAnalysisAsync(CoverageReport report)
     {
         // Run endpoint coverage analysis
-        var endpointResult = await _endpointAnalyzer.AnalyzeAsync();
+        var endpointResult = await endpointAnalyzer.AnalyzeAsync();
 
         // Run parameter coverage analysis
-        var parameterResults = await _parameterAnalyzer.AnalyzeAsync(endpointResult.MatchedEndpoints);
+        var parameterResults = await parameterAnalyzer.AnalyzeAsync(endpointResult.MatchedEndpoints);
 
         // Populate report
         report.Summary.TotalEndpoints = endpointResult.TotalEndpoints;
@@ -108,20 +94,41 @@ public class CoverageCoordinator
             .ToList();
     }
 
+    private void GenerateReport(CoverageReport report, string format, string? output)
+    {
+        switch (format.ToLowerInvariant())
+        {
+            case "json":
+                JsonReporter.GenerateReport(report, output);
+                break;
+            case "json-summary":
+                JsonReporter.GenerateSummaryReport(report, output);
+                break;
+            case "console":
+            default:
+                ConsoleReporter.Report(report);
+                if (!string.IsNullOrEmpty(output))
+                {
+                    logger.LogWarning("Output path specified but console format does not support file output");
+                }
+                break;
+        }
+    }
+
     private bool CheckThresholds(CoverageReport report, double endpointMin, double parameterMin)
     {
         var passed = true;
 
         if (report.Summary.EndpointCoverage < endpointMin)
         {
-            _logger.LogError("Endpoint coverage {Coverage}% is below threshold {Threshold}%",
+            logger.LogError("Endpoint coverage {Coverage}% is below threshold {Threshold}%",
                 report.Summary.EndpointCoverage, endpointMin);
             passed = false;
         }
 
         if (report.Summary.ParameterCoverage < parameterMin)
         {
-            _logger.LogError("Parameter coverage {Coverage}% is below threshold {Threshold}%",
+            logger.LogError("Parameter coverage {Coverage}% is below threshold {Threshold}%",
                 report.Summary.ParameterCoverage, parameterMin);
             passed = false;
         }

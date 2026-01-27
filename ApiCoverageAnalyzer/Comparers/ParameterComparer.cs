@@ -1,6 +1,7 @@
 using ApiCoverageAnalyzer.Analyzers;
 using ApiCoverageAnalyzer.Utilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -9,21 +10,14 @@ namespace ApiCoverageAnalyzer.Comparers;
 /// <summary>
 /// Compares API parameters to wrapper method parameters
 /// </summary>
-public class ParameterComparer
+public class ParameterComparer(
+    NamingConventions naming,
+    ILogger<ParameterComparer> logger,
+    IOptions<AnalyzerSettings> settings)
 {
-    private readonly NamingConventions _naming;
-    private readonly TypeMapper _typeMapper;
-    private readonly ILogger<ParameterComparer> _logger;
-
-    public ParameterComparer(
-        NamingConventions naming,
-        TypeMapper typeMapper,
-        ILogger<ParameterComparer> logger)
-    {
-        _naming = naming;
-        _typeMapper = typeMapper;
-        _logger = logger;
-    }
+    private const string NullableState = "nullable";
+    private const string NonNullableState = "non-nullable";
+    private readonly AnalyzerSettings _settings = settings.Value;
 
     /// <summary>
     /// Compare API parameters to method parameters
@@ -39,96 +33,153 @@ public class ParameterComparer
 
         var methodParams = method.GetParameters();
 
+        // Validate each API parameter against method parameters
+        ValidateApiParameters(apiParameters, methodParams, method, result);
+
+        // Check for extra parameters in wrapper that don't exist in API
+        ValidateExtraParameters(apiParameters, methodParams, method, result);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Validate each API parameter against the method's parameters
+    /// </summary>
+    private void ValidateApiParameters(
+        Dictionary<string, EndpointParameter> apiParameters,
+        ParameterInfo[] methodParams,
+        MethodInfo method,
+        ParameterAnalysisResult result)
+    {
         foreach (var (apiParamName, apiParam) in apiParameters)
         {
-            // Convert snake_case to camelCase for matching
-            var expectedParamName = _naming.ToCamelCase(apiParamName);
-
-            // Find matching method parameter with flexible matching
+            var expectedParamName = naming.ToCamelCase(apiParamName);
             var matchingParam = FindMatchingParameter(methodParams, expectedParamName, apiParamName);
 
-            if (matchingParam == null)
+            if (matchingParam is null)
             {
                 result.MissingParameters.Add(apiParamName);
-                _logger.LogWarning("Missing parameter {Parameter} in method {Method}",
+                logger.LogWarning("Missing parameter {Parameter} in method {Method}",
                     apiParamName, method.Name);
                 continue;
             }
 
-            // Check type compatibility
-            if (!_typeMapper.AreCompatible(apiParam.Type, matchingParam.ParameterType))
-            {
-                var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
-                result.TypeMismatches.Add(new Models.TypeMismatch
-                {
-                    Parameter = apiParamName,
-                    ApiType = apiParam.Type,
-                    WrapperType = wrapperTypeName
-                });
-                _logger.LogWarning("Type mismatch for parameter {Parameter}: expected {Expected}, got {Actual}",
-                    apiParamName, apiParam.Type, wrapperTypeName);
-            }
-            else
-            {
-                // If it's an enum type, validate that all enum values appear in the API note
-                ValidateEnumValues(matchingParam.ParameterType, apiParam.Note, apiParamName, result);
-            }
-
-            // Check nullable state matches required state
-            if (!_typeMapper.IsNullableStateCorrect(matchingParam.ParameterType, apiParam.Required))
-            {
-                var expectedState = apiParam.Required ? "non-nullable" : "nullable";
-                var actualState = (Nullable.GetUnderlyingType(matchingParam.ParameterType) != null || !matchingParam.ParameterType.IsValueType) ? "nullable" : "non-nullable";
-                var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
-
-                result.TypeMismatches.Add(new Models.TypeMismatch
-                {
-                    Parameter = apiParamName,
-                    ApiType = $"{apiParam.Type} ({expectedState})",
-                    WrapperType = $"{wrapperTypeName} ({actualState})"
-                });
-                _logger.LogWarning("Nullable mismatch for parameter {Parameter}: API expects {Expected} but wrapper has {Actual}",
-                    apiParamName, expectedState, actualState);
-            }
-
-            // Check required vs optional
-            if (apiParam.Required && matchingParam.HasDefaultValue)
-            {
-                result.RequiredOptionalMismatches.Add(apiParamName);
-                _logger.LogWarning("Parameter {Parameter} is required in API but optional in wrapper",
-                    apiParamName);
-            }
+            // Validate parameter properties
+            ValidateTypeCompatibility(apiParam, matchingParam, apiParamName, result);
+            ValidateNullableState(apiParam, matchingParam, apiParamName, result);
+            ValidateRequiredOptional(apiParam, matchingParam, apiParamName);
 
             result.CoveredParameters++;
         }
+    }
 
-        // Check for extra parameters (in wrapper but not in API)
+    /// <summary>
+    /// Validate type compatibility between API and wrapper parameter
+    /// </summary>
+    private void ValidateTypeCompatibility(
+        EndpointParameter apiParam,
+        ParameterInfo matchingParam,
+        string apiParamName,
+        ParameterAnalysisResult result)
+    {
+        if (!TypeMapper.AreCompatible(apiParam.Type, matchingParam.ParameterType))
+        {
+            var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
+            result.TypeMismatches.Add(new Models.TypeMismatch
+            {
+                Parameter = apiParamName,
+                ApiType = apiParam.Type,
+                WrapperType = wrapperTypeName
+            });
+            logger.LogWarning("Type mismatch for parameter {Parameter}: expected {Expected}, got {Actual}",
+                apiParamName, apiParam.Type, wrapperTypeName);
+        }
+        else
+        {
+            // If it's an enum type, validate that all enum values appear in the API note
+            ValidateEnumValues(matchingParam.ParameterType, apiParam.Note, apiParamName, result);
+        }
+    }
+
+    /// <summary>
+    /// Validate nullable state matches the required state
+    /// </summary>
+    private void ValidateNullableState(
+        EndpointParameter apiParam,
+        ParameterInfo matchingParam,
+        string apiParamName,
+        ParameterAnalysisResult result)
+    {
+        if (!TypeMapper.IsNullableStateCorrect(matchingParam.ParameterType, apiParam.Required))
+        {
+            var expectedState = apiParam.Required ? NonNullableState : NullableState;
+            var actualState = (Nullable.GetUnderlyingType(matchingParam.ParameterType) is not null ||
+                              !matchingParam.ParameterType.IsValueType) ? NullableState : NonNullableState;
+            var wrapperTypeName = GetFriendlyTypeName(matchingParam.ParameterType);
+
+            result.TypeMismatches.Add(new Models.TypeMismatch
+            {
+                Parameter = apiParamName,
+                ApiType = $"{apiParam.Type} ({expectedState})",
+                WrapperType = $"{wrapperTypeName} ({actualState})"
+            });
+            logger.LogWarning("Nullable mismatch for parameter {Parameter}: API expects {Expected} but wrapper has {Actual}",
+                apiParamName, expectedState, actualState);
+        }
+    }
+
+    /// <summary>
+    /// Validate required vs optional parameter state
+    /// </summary>
+    private void ValidateRequiredOptional(
+        EndpointParameter apiParam,
+        ParameterInfo matchingParam,
+        string apiParamName)
+    {
+        if (apiParam.Required && matchingParam.HasDefaultValue)
+        {
+            logger.LogWarning("Parameter {Parameter} is required in API but optional in wrapper",
+                apiParamName);
+        }
+    }
+
+    /// <summary>
+    /// Validate extra parameters in wrapper that don't exist in API
+    /// </summary>
+    private void ValidateExtraParameters(
+        Dictionary<string, EndpointParameter> apiParameters,
+        ParameterInfo[] methodParams,
+        MethodInfo method,
+        ParameterAnalysisResult result)
+    {
         foreach (var methodParam in methodParams)
         {
-            // Try to find this wrapper parameter in the API parameters
-            var foundInApi = false;
-
-            foreach (var (apiParamName, apiParam) in apiParameters)
-            {
-                var expectedParamName = _naming.ToCamelCase(apiParamName);
-                var matchingParam = FindMatchingParameter(new[] { methodParam }, expectedParamName, apiParamName);
-
-                if (matchingParam != null)
-                {
-                    foundInApi = true;
-                    break;
-                }
-            }
-
-            if (!foundInApi)
+            if (!IsParameterInApi(methodParam, apiParameters))
             {
                 result.ExtraParameters.Add(methodParam.Name!);
-                _logger.LogWarning("Extra parameter {Parameter} in wrapper method {Method} not found in API",
+                logger.LogWarning("Extra parameter {Parameter} in wrapper method {Method} not found in API",
                     methodParam.Name, method.Name);
             }
         }
+    }
 
-        return result;
+    /// <summary>
+    /// Check if a method parameter exists in the API parameters
+    /// </summary>
+    private bool IsParameterInApi(ParameterInfo methodParam, Dictionary<string, EndpointParameter> apiParameters)
+    {
+        foreach (var (apiParamName, _) in apiParameters)
+        {
+            var expectedParamName = naming.ToCamelCase(apiParamName);
+            var matchingParam = FindMatchingParameter(new[] { methodParam }, expectedParamName, apiParamName);
+
+            if (matchingParam is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -137,7 +188,7 @@ public class ParameterComparer
     private static string GetFriendlyTypeName(Type type)
     {
         var underlyingType = Nullable.GetUnderlyingType(type);
-        if (underlyingType != null)
+        if (underlyingType is not null)
         {
             return $"{underlyingType.Name}?";
         }
@@ -162,7 +213,7 @@ public class ParameterComparer
         foreach (var enumValue in enumValues)
         {
             var memberInfo = actualType.GetField(enumValue.ToString()!);
-            if (memberInfo == null)
+            if (memberInfo is null)
                 continue;
 
             // Get the EnumMember attribute
@@ -184,24 +235,10 @@ public class ParameterComparer
                 ApiType = $"string (missing enum values in note: {string.Join(", ", missingValues)})",
                 WrapperType = actualType.Name
             });
-            _logger.LogWarning("Enum validation failed for {Parameter}: values {Values} not found in API note",
+            logger.LogWarning("Enum validation failed for {Parameter}: values {Values} not found in API note",
                 apiParamName, string.Join(", ", missingValues));
         }
     }
-
-    /// <summary>
-    /// Explicit mappings for API parameter names that don't follow standard conventions
-    /// Key: API parameter name (snake_case), Value: Wrapper parameter name (camelCase)
-    /// </summary>
-    private static readonly Dictionary<string, string> ExplicitParameterMappings = new(StringComparer.OrdinalIgnoreCase)
-    {
-        // API uses abbreviated form, wrapper uses full form
-        { "cust_id", "customerId" },
-        { "cust_ids", "customerIds" },
-
-        // Add more explicit mappings here as needed
-        // Example: { "api_param_name", "wrapperParamName" }
-    };
 
     /// <summary>
     /// Find a matching parameter with explicit mapping and fallback to exact match
@@ -209,14 +246,14 @@ public class ParameterComparer
     private ParameterInfo? FindMatchingParameter(ParameterInfo[] methodParams, string expectedParamName, string apiParamName)
     {
         // Strategy 1: Check explicit mappings first
-        if (ExplicitParameterMappings.TryGetValue(apiParamName, out var mappedName))
+        if (_settings.ParameterMappings.TryGetValue(apiParamName, out var mappedName))
         {
             var explicitMatch = methodParams.FirstOrDefault(p =>
                 p.Name!.Equals(mappedName, StringComparison.OrdinalIgnoreCase));
 
-            if (explicitMatch != null)
+            if (explicitMatch is not null)
             {
-                _logger.LogDebug("Matched {ApiParam} to {MethodParam} via explicit mapping",
+                logger.LogDebug("Matched {ApiParam} to {MethodParam} via explicit mapping",
                     apiParamName, explicitMatch.Name);
                 return explicitMatch;
             }
@@ -226,7 +263,7 @@ public class ParameterComparer
         var exactMatch = methodParams.FirstOrDefault(p =>
             p.Name!.Equals(expectedParamName, StringComparison.OrdinalIgnoreCase));
 
-        if (exactMatch != null)
+        if (exactMatch is not null)
             return exactMatch;
 
         return null;

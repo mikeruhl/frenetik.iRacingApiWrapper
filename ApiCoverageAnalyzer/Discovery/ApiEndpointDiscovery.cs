@@ -7,27 +7,19 @@ namespace ApiCoverageAnalyzer.Discovery;
 /// <summary>
 /// Discovers API endpoints using GetDoc()
 /// </summary>
-public class ApiEndpointDiscovery
+public class ApiEndpointDiscovery(
+    IRacingApiService apiService,
+    ILogger<ApiEndpointDiscovery> logger)
 {
-    private readonly IRacingApiService _apiService;
-    private readonly ILogger<ApiEndpointDiscovery> _logger;
-
-    public ApiEndpointDiscovery(
-        IRacingApiService apiService,
-        ILogger<ApiEndpointDiscovery> logger)
-    {
-        _apiService = apiService;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Discover all API endpoints from GetDoc()
     /// </summary>
     public async Task<Dictionary<string, EndpointDetails>> DiscoverAsync()
     {
-        _logger.LogInformation("Fetching API documentation via GetDoc()...");
+        logger.LogInformation("Fetching API documentation via GetDoc()...");
 
-        var doc = await _apiService.GetDoc();
+        var doc = await apiService.GetDoc();
 
         // Flatten the nested dictionary structure
         var endpoints = new Dictionary<string, EndpointDetails>();
@@ -40,7 +32,7 @@ public class ApiEndpointDiscovery
             }
         }
 
-        _logger.LogInformation("Discovered {Count} endpoints from API documentation", endpoints.Count);
+        logger.LogInformation("Discovered {Count} endpoints from API documentation", endpoints.Count);
 
         return endpoints;
     }

@@ -5,12 +5,12 @@ namespace ApiCoverageAnalyzer.Utilities;
 /// <summary>
 /// Maps API type strings to .NET types
 /// </summary>
-public class TypeMapper
+public static class TypeMapper
 {
     /// <summary>
     /// Check if API type is compatible with .NET type
     /// </summary>
-    public bool AreCompatible(string apiType, Type dotnetType)
+    public static bool AreCompatible(string apiType, Type dotnetType)
     {
         // Unwrap nullable types
         var actualType = Nullable.GetUnderlyingType(dotnetType) ?? dotnetType;
@@ -98,9 +98,9 @@ public class TypeMapper
     /// <param name="dotnetType">The .NET parameter type</param>
     /// <param name="isRequired">Whether the API parameter is required</param>
     /// <returns>True if nullable state matches requirement, false otherwise</returns>
-    public bool IsNullableStateCorrect(Type dotnetType, bool isRequired)
+    public static bool IsNullableStateCorrect(Type dotnetType, bool isRequired)
     {
-        var isNullable = Nullable.GetUnderlyingType(dotnetType) != null || !dotnetType.IsValueType;
+        var isNullable = Nullable.GetUnderlyingType(dotnetType) is not null || !dotnetType.IsValueType;
 
         if (isRequired)
         {
@@ -119,7 +119,7 @@ public class TypeMapper
     /// <summary>
     /// Get the .NET type name for an API type
     /// </summary>
-    public string GetDotNetTypeName(string apiType)
+    public static string GetDotNetTypeName(string apiType)
     {
         return apiType.ToLower() switch
         {

@@ -8,22 +8,13 @@ namespace ApiCoverageAnalyzer.Analyzers;
 /// <summary>
 /// Analyzes parameter coverage for each endpoint
 /// </summary>
-public class ParameterCoverageAnalyzer
+public class ParameterCoverageAnalyzer(
+    ParameterComparer comparer,
+    ILogger<ParameterCoverageAnalyzer> logger)
 {
-    private readonly ParameterComparer _comparer;
-    private readonly ILogger<ParameterCoverageAnalyzer> _logger;
-
-    public ParameterCoverageAnalyzer(
-        ParameterComparer comparer,
-        ILogger<ParameterCoverageAnalyzer> logger)
-    {
-        _comparer = comparer;
-        _logger = logger;
-    }
-
     public Task<List<ParameterAnalysisResult>> AnalyzeAsync(Dictionary<string, MatchedEndpoint> matchedEndpoints)
     {
-        _logger.LogInformation("Analyzing parameter coverage for {Count} endpoints...", matchedEndpoints.Count);
+        logger.LogInformation("Analyzing parameter coverage for {Count} endpoints...", matchedEndpoints.Count);
 
         var results = new List<ParameterAnalysisResult>();
 
@@ -32,11 +23,11 @@ public class ParameterCoverageAnalyzer
             // Skip parameter validation for methods that use dynamic parameters
             if (UsesDynamicParameters(endpoint.Method))
             {
-                _logger.LogDebug("Skipping parameter validation for {Method} - uses dynamic parameters", endpoint.Method.Name);
+                logger.LogDebug("Skipping parameter validation for {Method} - uses dynamic parameters", endpoint.Method.Name);
                 continue;
             }
 
-            var result = _comparer.Compare(endpoint.Parameters, endpoint.Method);
+            var result = comparer.Compare(endpoint.Parameters, endpoint.Method);
             result.EndpointPath = path;
             results.Add(result);
         }
@@ -45,7 +36,7 @@ public class ParameterCoverageAnalyzer
         var coveredParams = results.Sum(r => r.CoveredParameters);
         var coverage = totalParams > 0 ? (double)coveredParams / totalParams * 100.0 : 100.0;
 
-        _logger.LogInformation("Parameter coverage: {Coverage}% ({Covered}/{Total})",
+        logger.LogInformation("Parameter coverage: {Coverage}% ({Covered}/{Total})",
             coverage, coveredParams, totalParams);
 
         return Task.FromResult(results);

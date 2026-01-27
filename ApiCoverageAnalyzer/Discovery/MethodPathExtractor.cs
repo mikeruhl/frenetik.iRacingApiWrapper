@@ -1,75 +1,98 @@
 using System.Reflection;
 using System.Reflection.Emit;
+using ApiCoverageAnalyzer.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace ApiCoverageAnalyzer.Discovery;
 
 /// <summary>
 /// Extracts the API path from wrapper methods by inspecting IL code
 /// </summary>
-public static class MethodPathExtractor
+public class MethodPathExtractor(ILogger<MethodPathExtractor> logger)
 {
+    private const byte LdstrOpcode = 0x72;
+    private const int MetadataTokenSize = 4;
+    private const int MaxPathSegmentLength = 50;
+    private const int MinPathSegments = 2;
+    private const int MaxPathSegments = 5;
+
     /// <summary>
     /// Extract the path parameter passed to GetResources from a method's IL code
     /// </summary>
-    public static string? ExtractPath(MethodInfo method)
+    public string? ExtractPath(MethodInfo method)
     {
         try
         {
             // First try extracting from the method itself
             var path = ExtractPathFromIL(method);
-            if (path != null)
+            if (path is not null)
                 return path;
 
             // If the method is async, the real implementation is in the state machine
             // Look for the AsyncStateMachineAttribute
             var asyncAttr = method.GetCustomAttribute<System.Runtime.CompilerServices.AsyncStateMachineAttribute>();
-            if (asyncAttr != null)
+            if (asyncAttr is not null)
             {
                 // Get the state machine type
                 var stateMachineType = asyncAttr.StateMachineType;
 
                 // Find the MoveNext method which contains the actual implementation
                 var moveNextMethod = stateMachineType.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (moveNextMethod != null)
+                if (moveNextMethod is not null)
                 {
                     path = ExtractPathFromIL(moveNextMethod);
-                    if (path != null)
+                    if (path is not null)
                         return path;
                 }
             }
 
             return null;
         }
-        catch
+        catch (InvalidOperationException ex)
         {
-            // If IL inspection fails, return null
+            logger.LogWarning(ex, "Invalid operation while extracting path from method {MethodName}", method.Name);
+            return null;
+        }
+        catch (NotSupportedException ex)
+        {
+            logger.LogWarning(ex, "Unsupported IL operation while extracting path from method {MethodName}", method.Name);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error extracting path from method {MethodName}", method.Name);
             return null;
         }
     }
 
-    private static string? ExtractPathFromIL(MethodInfo method)
+    private string? ExtractPathFromIL(MethodInfo method)
     {
         try
         {
             var methodBody = method.GetMethodBody();
-            if (methodBody == null)
+            if (methodBody is null)
+            {
+                logger.LogDebug("Method {MethodName} has no body", method.Name);
                 return null;
+            }
 
             var il = methodBody.GetILAsByteArray();
-            if (il == null)
+            if (il is null)
+            {
+                logger.LogDebug("Method {MethodName} has no IL bytes", method.Name);
                 return null;
+            }
 
             // Parse IL to find string literals (ldstr instruction)
-            // ldstr opcode is 0x72
             var strings = new List<string>();
 
             for (int i = 0; i < il.Length; i++)
             {
-                // Check for ldstr opcode (0x72)
-                if (il[i] == 0x72)
+                // Check for ldstr opcode
+                if (il[i] == LdstrOpcode)
                 {
-                    // Next 4 bytes are the metadata token for the string
-                    if (i + 4 < il.Length)
+                    // Next bytes are the metadata token for the string
+                    if (i + MetadataTokenSize < il.Length)
                     {
                         int token = BitConverter.ToInt32(il, i + 1);
 
@@ -82,24 +105,38 @@ public static class MethodPathExtractor
                                 strings.Add(str);
                             }
                         }
-                        catch
+                        catch (ArgumentOutOfRangeException ex)
                         {
-                            // Token resolution failed, continue
+                            logger.LogDebug(ex, "Invalid metadata token 0x{Token:X8} in method {MethodName}", token, method.Name);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            logger.LogDebug(ex, "Token 0x{Token:X8} does not reference a string in method {MethodName}", token, method.Name);
                         }
 
-                        i += 4; // Skip the token bytes
+                        i += MetadataTokenSize; // Skip the token bytes
                     }
                 }
             }
 
             // Find the first string that looks like an API path
-            // Could start with "/" or be relative like "member/info"
-            var path = strings.FirstOrDefault(s => IsApiPath(s));
+            var path = strings.FirstOrDefault(IsApiPath);
+
+            if (path is not null)
+            {
+                logger.LogDebug("Extracted path '{Path}' from method {MethodName}", path, method.Name);
+            }
 
             return path;
         }
-        catch
+        catch (InvalidOperationException ex)
         {
+            logger.LogWarning(ex, "Invalid operation while parsing IL for method {MethodName}", method.Name);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error parsing IL for method {MethodName}", method.Name);
             return null;
         }
     }
@@ -125,7 +162,9 @@ public static class MethodPathExtractor
             // Additional check: shouldn't be too long (avoid matching file paths or other strings)
             // and should have reasonable path segments
             var parts = str.Split('/');
-            if (parts.Length >= 2 && parts.Length <= 5 && parts.All(p => p.Length > 0 && p.Length < 50))
+            if (parts.Length >= MinPathSegments &&
+                parts.Length <= MaxPathSegments &&
+                parts.All(p => p.Length > 0 && p.Length < MaxPathSegmentLength))
             {
                 return true;
             }
@@ -137,42 +176,29 @@ public static class MethodPathExtractor
     /// <summary>
     /// Extract paths from all methods and create a mapping
     /// </summary>
-    public static Dictionary<string, MethodInfo> ExtractPathsFromMethods(IEnumerable<MethodInfo> methods)
+    public Dictionary<string, MethodInfo> ExtractPathsFromMethods(IEnumerable<MethodInfo> methods)
     {
         var pathToMethod = new Dictionary<string, MethodInfo>(StringComparer.OrdinalIgnoreCase);
+        var methodCount = 0;
+        var pathsExtracted = 0;
 
         foreach (var method in methods)
         {
+            methodCount++;
             var path = ExtractPath(method);
             if (!string.IsNullOrEmpty(path))
             {
+                pathsExtracted++;
                 // Store multiple variations of the path for flexible matching
-                // 1. Original path as extracted
-                pathToMethod[path] = method;
-
-                // 2. With leading slash (if it doesn't have one)
-                if (!path.StartsWith("/"))
+                foreach (var variation in PathNormalizer.GetPathVariations(path))
                 {
-                    pathToMethod["/" + path] = method;
-                }
-
-                // 3. Without leading slash (if it has one)
-                var normalizedPath = path.TrimStart('/');
-                pathToMethod[normalizedPath] = method;
-
-                // 4. Without /data/ prefix if present
-                if (path.StartsWith("/data/"))
-                {
-                    var withoutData = path.Substring(6); // Remove "/data/"
-                    pathToMethod[withoutData] = method;
-                }
-                else if (path.StartsWith("data/"))
-                {
-                    var withoutData = path.Substring(5); // Remove "data/"
-                    pathToMethod[withoutData] = method;
+                    pathToMethod[variation] = method;
                 }
             }
         }
+
+        logger.LogInformation("Extracted paths from {PathsExtracted}/{MethodCount} methods, created {VariationCount} path variations",
+            pathsExtracted, methodCount, pathToMethod.Count);
 
         return pathToMethod;
     }
