@@ -73,8 +73,8 @@ public class CoverageCoordinator(
         report.Summary.CoveredEndpoints = endpointResult.CoveredEndpoints;
         report.Summary.EndpointCoverage = endpointResult.CoveragePercentage;
 
-        report.Summary.TotalParameters = parameterResults.Sum(p => p.TotalParameters);
-        report.Summary.CoveredParameters = parameterResults.Sum(p => p.CoveredParameters);
+        report.Summary.TotalParameters = parameterResults.Where(p => !p.IsSkipped).Sum(p => p.TotalParameters);
+        report.Summary.CoveredParameters = parameterResults.Where(p => !p.IsSkipped).Sum(p => p.CoveredParameters);
         report.Summary.ParameterCoverage = report.Summary.TotalParameters > 0
             ? (double)report.Summary.CoveredParameters / report.Summary.TotalParameters * 100.0
             : 100.0;

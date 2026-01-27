@@ -24,7 +24,7 @@ public class EndpointCoverageAnalyzer(
 
         // Discover wrapper methods
         var wrapperMethods = wrapperDiscovery.Discover();
-        logger.LogInformation("Discovered {Count} wrapper methods", wrapperMethods.Count);
+        logger.LogInformation("Discovered {Count} wrapper path variations", wrapperMethods.Count);
 
         // Compare and match
         var result = comparer.Compare(apiEndpoints, wrapperMethods);

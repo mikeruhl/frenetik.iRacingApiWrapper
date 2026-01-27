@@ -49,8 +49,6 @@ public class ConsoleReporter()
             Console.WriteLine($"Parameter Issues ({parameterIssues.Count} endpoints):");
             foreach (var endpoint in parameterIssues)
             {
-                if (endpoint.ParameterResult is null) continue;
-
                 // Print endpoint path once at the beginning
                 Console.WriteLine($"  ✗ {endpoint.Path}");
 

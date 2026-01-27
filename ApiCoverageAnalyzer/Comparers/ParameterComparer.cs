@@ -65,15 +65,15 @@ public class ParameterComparer(
             }
 
             // Track the number of issues before validation
-            var issuesBeforeValidation = result.TypeMismatches.Count;
+            var issuesBeforeValidation = result.TypeMismatches.Count + result.RequiredOptionalMismatches.Count;
 
             // Validate parameter properties
             ValidateTypeCompatibility(apiParam, matchingParam, apiParamName, result);
             ValidateNullableState(apiParam, matchingParam, apiParamName, result);
-            ValidateRequiredOptional(apiParam, matchingParam, apiParamName);
+            ValidateRequiredOptional(apiParam, matchingParam, apiParamName, result);
 
             // Only count as covered if no new issues were found
-            if (result.TypeMismatches.Count == issuesBeforeValidation)
+            if (result.TypeMismatches.Count + result.RequiredOptionalMismatches.Count == issuesBeforeValidation)
             {
                 result.CoveredParameters++;
             }
@@ -141,10 +141,12 @@ public class ParameterComparer(
     private void ValidateRequiredOptional(
         EndpointParameter apiParam,
         ParameterInfo matchingParam,
-        string apiParamName)
+        string apiParamName,
+        ParameterAnalysisResult result)
     {
         if (apiParam.Required && matchingParam.HasDefaultValue)
         {
+            result.RequiredOptionalMismatches.Add(apiParamName);
             logger.LogWarning("Parameter {Parameter} is required in API but optional in wrapper",
                 apiParamName);
         }

@@ -71,7 +71,8 @@ public static class JsonReporter
                     .Count(e => e.ParameterResult is not null &&
                                (e.ParameterResult.MissingParameters.Any() ||
                                 e.ParameterResult.ExtraParameters.Any() ||
-                                e.ParameterResult.TypeMismatches.Any()))
+                                e.ParameterResult.TypeMismatches.Any() ||
+                                e.ParameterResult.RequiredOptionalMismatches.Any()))
             }
         };
 
