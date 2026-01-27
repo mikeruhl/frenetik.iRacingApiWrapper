@@ -90,14 +90,14 @@ class Program
         // Get analyzer settings and apply defaults where needed
         var analyzerSettings = host.Services.GetRequiredService<IOptions<AnalyzerSettings>>().Value;
 
-        var effectiveCheckThreshold = checkThreshold || analyzerSettings.FailOnThresholdViolation;
-        var effectiveEndpointMin = endpointMin > 0 ? endpointMin : analyzerSettings.DefaultEndpointThreshold;
-        var effectiveParameterMin = parameterMin > 0 ? parameterMin : analyzerSettings.DefaultParameterThreshold;
-        var effectiveOutput = string.IsNullOrEmpty(output) ? null : output;
+        var effectiveCheckThreshold = checkThreshold.Value || analyzerSettings.FailOnThresholdViolation;
+        var effectiveEndpointMin = endpointMin.Value > 0 ? endpointMin.Value : analyzerSettings.DefaultEndpointThreshold;
+        var effectiveParameterMin = parameterMin.Value > 0 ? parameterMin.Value : analyzerSettings.DefaultParameterThreshold;
+        var effectiveOutput = string.IsNullOrEmpty(output.Value) ? null : output.Value;
 
         // Run coverage analysis
         var coordinator = host.Services.GetRequiredService<CoverageCoordinator>();
-        await coordinator.RunAsync(mode, effectiveOutput, format, effectiveCheckThreshold, effectiveEndpointMin, effectiveParameterMin);
+        await coordinator.RunAsync(mode.Value, effectiveOutput, format.Value, effectiveCheckThreshold, effectiveEndpointMin, effectiveParameterMin);
 
         return Environment.ExitCode;
     }
