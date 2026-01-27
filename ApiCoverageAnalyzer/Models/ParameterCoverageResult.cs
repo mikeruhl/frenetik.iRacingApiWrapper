@@ -42,6 +42,12 @@ public class ParameterCoverageResult
     /// </summary>
     [JsonPropertyName("covered_parameters")]
     public int CoveredParameters { get; set; }
+
+    /// <summary>
+    /// Indicates if parameter validation was skipped (e.g., for methods using dynamic parameters)
+    /// </summary>
+    [JsonPropertyName("is_skipped")]
+    public bool IsSkipped { get; set; }
 }
 
 /// <summary>

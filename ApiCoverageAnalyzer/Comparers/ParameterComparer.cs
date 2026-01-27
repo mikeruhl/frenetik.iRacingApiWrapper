@@ -64,12 +64,19 @@ public class ParameterComparer(
                 continue;
             }
 
+            // Track the number of issues before validation
+            var issuesBeforeValidation = result.TypeMismatches.Count;
+
             // Validate parameter properties
             ValidateTypeCompatibility(apiParam, matchingParam, apiParamName, result);
             ValidateNullableState(apiParam, matchingParam, apiParamName, result);
             ValidateRequiredOptional(apiParam, matchingParam, apiParamName);
 
-            result.CoveredParameters++;
+            // Only count as covered if no new issues were found
+            if (result.TypeMismatches.Count == issuesBeforeValidation)
+            {
+                result.CoveredParameters++;
+            }
         }
     }
 
@@ -152,14 +159,13 @@ public class ParameterComparer(
         MethodInfo method,
         ParameterAnalysisResult result)
     {
-        foreach (var methodParam in methodParams)
+        foreach (var paramName in methodParams
+            .Where(mp => !IsParameterInApi(mp, apiParameters))
+            .Select(methodParam => methodParam.Name))
         {
-            if (!IsParameterInApi(methodParam, apiParameters))
-            {
-                result.ExtraParameters.Add(methodParam.Name!);
-                logger.LogWarning("Extra parameter {Parameter} in wrapper method {Method} not found in API",
-                    methodParam.Name, method.Name);
-            }
+            result.ExtraParameters.Add(paramName!);
+            logger.LogWarning("Extra parameter {Parameter} in wrapper method {Method} not found in API",
+                paramName, method.Name);
         }
     }
 

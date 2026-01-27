@@ -120,7 +120,7 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="packageId"></param>
     /// <returns></returns>
-    Task<SessionResult> GetHostedCombinedSession(int? packageId);
+    Task<SessionResult> GetHostedCombinedSession(int? packageId = null);
 
     /// <summary>
     /// Get hosted sessions
@@ -424,7 +424,7 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <param name="year">Season year; if not supplied the current calendar year (UTC) is used.</param>
-    /// <param name="season">Season (quarter) within the year; if not supplied the recap will be fore the entire year.</param>
+    /// <param name="season">Season (quarter) within the year; if not supplied the recap will be for the entire year.</param>
     /// <returns></returns>
     Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? season = null);
 
@@ -625,7 +625,7 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Time Attack Member Season Results
     /// </summary>
-    /// <param name="TaCompSeasonId"></param>
+    /// <param name="taCompSeasonId"></param>
     /// <returns></returns>
-    Task<JsonElement> GetTimeAttackMemberSeasonResults(int TaCompSeasonId);
+    Task<JsonElement> GetTimeAttackMemberSeasonResults(int taCompSeasonId);
 }

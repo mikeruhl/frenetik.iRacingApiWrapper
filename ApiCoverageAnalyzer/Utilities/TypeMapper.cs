@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace ApiCoverageAnalyzer.Utilities;
 
 /// <summary>
@@ -12,82 +10,79 @@ public static class TypeMapper
     /// </summary>
     public static bool AreCompatible(string apiType, Type dotnetType)
     {
-        // Unwrap nullable types
         var actualType = Nullable.GetUnderlyingType(dotnetType) ?? dotnetType;
         var typeName = actualType.Name;
+        var apiTypeLower = apiType.ToLower();
 
-        // Handle enum types - enums are compatible with string API types
-        if (actualType.IsEnum)
-        {
-            return apiType.ToLower() is "string" or "str";
-        }
+        if (IsEnumCompatible(apiTypeLower, actualType))
+            return true;
 
-        // Handle generic types (IEnumerable<T>, List<T>, etc.)
-        if (actualType.IsGenericType)
+        if (IsGenericCompatible(apiTypeLower, actualType))
+            return true;
+
+        if (IsArrayCompatible(apiTypeLower, actualType))
+            return true;
+
+        return IsTypeMappingCompatible(apiTypeLower, typeName, actualType);
+    }
+
+    private static bool IsEnumCompatible(string apiTypeLower, Type actualType)
+    {
+        // Enums are compatible with string API types
+        return actualType.IsEnum && (apiTypeLower == "string" || apiTypeLower == "str");
+    }
+
+    private static bool IsGenericCompatible(string apiTypeLower, Type actualType)
+    {
+        if (!actualType.IsGenericType)
+            return false;
+
+        var genericDef = actualType.GetGenericTypeDefinition();
+        if (genericDef == typeof(IEnumerable<>) ||
+            genericDef == typeof(List<>) ||
+            genericDef == typeof(IList<>) ||
+            genericDef == typeof(ICollection<>))
         {
-            var genericDef = actualType.GetGenericTypeDefinition();
-            if (genericDef == typeof(IEnumerable<>) ||
-                genericDef == typeof(List<>) ||
-                genericDef == typeof(IList<>) ||
-                genericDef == typeof(ICollection<>))
+            if (apiTypeLower == "numbers")
             {
-                // Check for "numbers" type - should be IEnumerable<int> or similar int collection
-                if (apiType.ToLower() == "numbers")
-                {
-                    var elementType = actualType.GetGenericArguments()[0];
-                    return elementType == typeof(int) || elementType == typeof(Int32);
-                }
-
-                // Arrays/collections are compatible with "array" or the element type
-                return apiType == "array" || apiType == "list";
+                var elementType = actualType.GetGenericArguments()[0];
+                return elementType == typeof(int) || elementType == typeof(Int32);
             }
+            return apiTypeLower == "array" || apiTypeLower == "list";
         }
+        return false;
+    }
 
-        // Handle array types
-        if (actualType.IsArray)
+    private static bool IsArrayCompatible(string apiTypeLower, Type actualType)
+    {
+        if (!actualType.IsArray)
+            return false;
+
+        if (apiTypeLower == "numbers")
         {
-            // Check for "numbers" type - should be int[]
-            if (apiType.ToLower() == "numbers")
-            {
-                return actualType.GetElementType() == typeof(int);
-            }
-
-            return apiType == "array" || apiType == "list";
+            return actualType.GetElementType() == typeof(int);
         }
+        return apiTypeLower == "array" || apiTypeLower == "list";
+    }
 
-        // Type compatibility mappings
-        return (apiType.ToLower(), typeName) switch
+    private static bool IsTypeMappingCompatible(string apiTypeLower, string typeName, Type actualType)
+    {
+        return (apiTypeLower, typeName) switch
         {
-            // Number type (generic numeric from API - matches any numeric type)
             ("number", "Int32" or "Int64" or "Int16" or "Byte" or "Single" or "Double" or "Decimal") => true,
-
-            // Integer types
             ("integer" or "int" or "int32", "Int32") => true,
             ("integer" or "int" or "int64" or "long", "Int64") => true,
             ("integer" or "int", "Int16") => true,
             ("integer" or "int", "Byte") => true,
-
-            // String types
             ("string" or "str", "String") => true,
-            // DateTimeOffset is compatible with string (dates are sent as ISO-8601 strings)
             ("string" or "str", "DateTimeOffset") => true,
-
-            // Boolean types
             ("boolean" or "bool", "Boolean") => true,
-
-            // Floating point types
             ("float" or "single", "Single") => true,
             ("double" or "float", "Double") => true,
             ("decimal" or "float" or "double", "Decimal") => true,
-
-            // Date/Time types - enforce DateTimeOffset for ISO-8601 dates
             ("datetime" or "date" or "timestamp", "DateTimeOffset") => true,
-
-            // Object/dictionary types
             ("object" or "dictionary" or "dict", "Dictionary`2") => true,
             ("object", _) when !actualType.IsPrimitive => true,
-
-            // Default: not compatible
             _ => false
         };
     }

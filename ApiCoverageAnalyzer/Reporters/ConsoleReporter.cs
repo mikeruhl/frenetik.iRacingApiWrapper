@@ -34,9 +34,10 @@ public class ConsoleReporter()
             Console.WriteLine();
         }
 
-        // Parameter issues
+        // Parameter issues (excluding skipped endpoints)
         var parameterIssues = report.EndpointResults
             .Where(e => e.ParameterResult is not null &&
+                       !e.ParameterResult.IsSkipped &&
                        (e.ParameterResult.MissingParameters.Any() ||
                         e.ParameterResult.ExtraParameters.Any() ||
                         e.ParameterResult.TypeMismatches.Any() ||

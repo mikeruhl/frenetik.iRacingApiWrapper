@@ -82,11 +82,8 @@ public class NamingConventions
         var parts = path.Split('/');
         var methodParts = new List<string> { "Get" };
 
-        foreach (var part in parts)
+        foreach (var part in parts.Where(p => !string.IsNullOrWhiteSpace(p) && p != "get"))
         {
-            if (string.IsNullOrWhiteSpace(part) || part == "get")
-                continue;
-
             // Convert snake_case parts to PascalCase
             if (part.Contains('_'))
             {

@@ -5,9 +5,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="GoFlag" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
-    <PackageReference Include="System.CommandLine" Version="2.0.2" />
   </ItemGroup>
 
   <PropertyGroup>

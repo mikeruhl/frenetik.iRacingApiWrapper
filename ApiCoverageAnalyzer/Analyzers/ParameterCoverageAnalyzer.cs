@@ -20,20 +20,32 @@ public class ParameterCoverageAnalyzer(
 
         foreach (var (path, endpoint) in matchedEndpoints)
         {
+            ParameterAnalysisResult result;
+
             // Skip parameter validation for methods that use dynamic parameters
             if (UsesDynamicParameters(endpoint.Method))
             {
                 logger.LogDebug("Skipping parameter validation for {Method} - uses dynamic parameters", endpoint.Method.Name);
-                continue;
+                result = new ParameterAnalysisResult
+                {
+                    EndpointPath = path,
+                    TotalParameters = endpoint.Parameters.Count,
+                    IsSkipped = true
+                };
+            }
+            else
+            {
+                result = comparer.Compare(endpoint.Parameters, endpoint.Method);
+                result.EndpointPath = path;
             }
 
-            var result = comparer.Compare(endpoint.Parameters, endpoint.Method);
-            result.EndpointPath = path;
             results.Add(result);
         }
 
-        var totalParams = results.Sum(r => r.TotalParameters);
-        var coveredParams = results.Sum(r => r.CoveredParameters);
+        // Calculate coverage excluding skipped results
+        var applicableResults = results.Where(r => !r.IsSkipped).ToList();
+        var totalParams = applicableResults.Sum(r => r.TotalParameters);
+        var coveredParams = applicableResults.Sum(r => r.CoveredParameters);
         var coverage = totalParams > 0 ? (double)coveredParams / totalParams * 100.0 : 100.0;
 
         logger.LogInformation("Parameter coverage: {Coverage}% ({Covered}/{Total})",

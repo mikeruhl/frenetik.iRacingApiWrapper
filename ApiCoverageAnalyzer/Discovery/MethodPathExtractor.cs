@@ -88,34 +88,31 @@ public class MethodPathExtractor(ILogger<MethodPathExtractor> logger)
 
             for (int i = 0; i < il.Length; i++)
             {
-                // Check for ldstr opcode
-                if (il[i] == LdstrOpcode)
+                // Check for ldstr opcode and ensure we have enough bytes for the metadata token
+                if (il[i] == LdstrOpcode && i + MetadataTokenSize < il.Length)
                 {
-                    // Next bytes are the metadata token for the string
-                    if (i + MetadataTokenSize < il.Length)
+                    // Next 4 bytes are the metadata token for the string
+                    int token = BitConverter.ToInt32(il, i + 1);
+
+                    // Resolve the string from the metadata token
+                    try
                     {
-                        int token = BitConverter.ToInt32(il, i + 1);
-
-                        // Resolve the string from the metadata token
-                        try
+                        var str = method.Module.ResolveString(token);
+                        if (!string.IsNullOrEmpty(str))
                         {
-                            var str = method.Module.ResolveString(token);
-                            if (!string.IsNullOrEmpty(str))
-                            {
-                                strings.Add(str);
-                            }
+                            strings.Add(str);
                         }
-                        catch (ArgumentOutOfRangeException ex)
-                        {
-                            logger.LogDebug(ex, "Invalid metadata token 0x{Token:X8} in method {MethodName}", token, method.Name);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            logger.LogDebug(ex, "Token 0x{Token:X8} does not reference a string in method {MethodName}", token, method.Name);
-                        }
-
-                        i += MetadataTokenSize; // Skip the token bytes
                     }
+                    catch (ArgumentOutOfRangeException ex)
+                    {
+                        logger.LogDebug(ex, "Invalid metadata token 0x{Token:X8} in method {MethodName}", token, method.Name);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        logger.LogDebug(ex, "Token 0x{Token:X8} does not reference a string in method {MethodName}", token, method.Name);
+                    }
+
+                    i += MetadataTokenSize; // Skip the token bytes
                 }
             }
 

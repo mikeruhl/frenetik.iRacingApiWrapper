@@ -6,6 +6,7 @@ using ApiCoverageAnalyzer.Utilities;
 using Frenetik.iRacingApiWrapper;
 using Frenetik.iRacingApiWrapper.Config;
 using Frenetik.iRacingApiWrapper.Service;
+using GoFlag;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,6 +19,20 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
+        // Parse command-line arguments with GoFlag
+        var mode = Flag.String("mode", "quick", "Analysis mode (quick, full, detailed)");
+        var output = Flag.String("output", "", "Output file path (optional)");
+        var format = Flag.String("format", "console", "Output format (console, json)");
+        var checkThreshold = Flag.Bool("check-threshold", false, "Fail if coverage thresholds are not met");
+        var endpointMin = Flag.Float("endpoint-min", 0.0F, "Minimum endpoint coverage percentage");
+        var parameterMin = Flag.Float("parameter-min", 0.0F, "Minimum parameter coverage percentage");
+        var verbose = Flag.Bool("verbose", false, "Enable verbose logging");
+        var verboseShorthand = Flag.Bool("v", false, "Enable verbose logging (shorthand)");
+
+        Flag.Parse();
+
+        var useVerbose = verbose.Value || verboseShorthand.Value;
+
         // Build host with DI
         var builder = Host.CreateApplicationBuilder(args);
 
@@ -26,10 +41,9 @@ class Program
             .AddUserSecrets<Program>();
 
         // Configure logging based on verbosity
-        var verbose = HasArg(args, "--verbose") || HasArg(args, "-v");
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
-        builder.Logging.SetMinimumLevel(verbose ? LogLevel.Debug : LogLevel.Information);
+        builder.Logging.SetMinimumLevel(useVerbose ? LogLevel.Debug : LogLevel.Information);
 
         // Register iRacing API service (following TestWrapper.Bearer pattern)
         builder.Services.AddHttpClient(IRacingApiService.HttpClientName)
@@ -73,36 +87,18 @@ class Program
 
         var host = builder.Build();
 
-        // Get analyzer settings for defaults
+        // Get analyzer settings and apply defaults where needed
         var analyzerSettings = host.Services.GetRequiredService<IOptions<AnalyzerSettings>>().Value;
 
-        // Simple argument parsing
-        var mode = GetArgValue(args, "--mode") ?? "quick";
-        var output = GetArgValue(args, "--output");
-        var format = GetArgValue(args, "--format") ?? "console";
-        var checkThreshold = HasArg(args, "--check-threshold") || analyzerSettings.FailOnThresholdViolation;
-        var endpointMin = double.Parse(GetArgValue(args, "--endpoint-min") ?? analyzerSettings.DefaultEndpointThreshold.ToString());
-        var parameterMin = double.Parse(GetArgValue(args, "--parameter-min") ?? analyzerSettings.DefaultParameterThreshold.ToString());
+        var effectiveCheckThreshold = checkThreshold || analyzerSettings.FailOnThresholdViolation;
+        var effectiveEndpointMin = endpointMin > 0 ? endpointMin : analyzerSettings.DefaultEndpointThreshold;
+        var effectiveParameterMin = parameterMin > 0 ? parameterMin : analyzerSettings.DefaultParameterThreshold;
+        var effectiveOutput = string.IsNullOrEmpty(output) ? null : output;
 
         // Run coverage analysis
         var coordinator = host.Services.GetRequiredService<CoverageCoordinator>();
-        await coordinator.RunAsync(mode, output, format, checkThreshold, endpointMin, parameterMin);
+        await coordinator.RunAsync(mode, effectiveOutput, format, effectiveCheckThreshold, effectiveEndpointMin, effectiveParameterMin);
 
         return Environment.ExitCode;
-    }
-
-    static string? GetArgValue(string[] args, string argName)
-    {
-        for (int i = 0; i < args.Length - 1; i++)
-        {
-            if (args[i] == argName)
-                return args[i + 1];
-        }
-        return null;
-    }
-
-    static bool HasArg(string[] args, string argName)
-    {
-        return args.Contains(argName);
     }
 }
