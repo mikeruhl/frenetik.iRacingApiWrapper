@@ -25,8 +25,6 @@ public class IRacingApiService : IIRacingApiService
     private readonly IAsyncPolicy<HttpResponseMessage> _retryPolicy;
     private readonly string _httpClientName;
 
-    private const string Iso8601DateFormat = "yyyy-MM-ddTHH:mmZ";
-
     /// <summary>
     /// HTTP client name for all iRacing API requests
     /// </summary>
@@ -187,7 +185,7 @@ public class IRacingApiService : IIRacingApiService
     /// <inheritdoc />
     public Task<ResultSearchHosted> GetResultsSearchHosted(DateTimeOffset? startRangeBegin = null, DateTimeOffset? startRangeEnd = null, DateTimeOffset? finishRangeBegin = null, DateTimeOffset? finishRangeEnd = null, int? custId = null, int? teamId = null, int? hostCustId = null, string? sessionName = null, int? leagueId = null, int? leagueSeasonId = null, int? carId = null, int? trackId = null, IEnumerable<int>? categoryIds = null) =>
         GetResources<ResultSearchHosted>("/results/search_hosted", false, BuildParameters(["start_range_begin", "start_range_end", "finish_range_begin", "finish_range_end", "cust_id", "team_id", "host_cust_id", "session_name", "league_id", "league_season_id", "car_id", "track_id", "category_ids"],
-                       [startRangeBegin.HasValue ? startRangeBegin.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null, startRangeEnd.HasValue ? startRangeEnd.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null, finishRangeBegin.HasValue ? finishRangeBegin.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null, finishRangeEnd.HasValue ? finishRangeEnd.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null, custId, teamId, hostCustId, sessionName, leagueId, leagueSeasonId, carId, trackId, CreateCsv(categoryIds)]));
+                       [startRangeBegin.ToIso8601DateString(), startRangeEnd.ToIso8601DateString(), finishRangeBegin.ToIso8601DateString(), finishRangeEnd.ToIso8601DateString(), custId, teamId, hostCustId, sessionName, leagueId, leagueSeasonId, carId, trackId, CreateCsv(categoryIds)]));
 
     /// <inheritdoc />
     public Task<ResultsSearchSeries> GetResultsSearchSeries(int? seasonYear = null, int? seasonQuarter = null, DateTimeOffset? startRangeBegin = null, DateTimeOffset? startRangeEnd = null, DateTimeOffset? finishRangeBegin = null, DateTimeOffset? finishRangeEnd = null, int? customerId = null, int? teamId = null, int? seriesId = null, int? raceWeekNum = null, bool? officialOnly = null, IEnumerable<int>? eventTypes = null, IEnumerable<int>? categoryIds = null) =>
@@ -195,10 +193,10 @@ public class IRacingApiService : IIRacingApiService
             [
                 seasonYear,
                 seasonQuarter,
-                startRangeBegin.HasValue ? startRangeBegin.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null,
-                startRangeEnd.HasValue ? startRangeEnd.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null,
-                finishRangeBegin.HasValue ? finishRangeBegin.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null,
-                finishRangeEnd.HasValue ? finishRangeEnd.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null,
+                startRangeBegin.ToIso8601DateString(),
+                startRangeEnd.ToIso8601DateString(),
+                finishRangeBegin.ToIso8601DateString(),
+                finishRangeEnd.ToIso8601DateString(),
                 customerId,
                 teamId,
                 seriesId,
@@ -219,7 +217,7 @@ public class IRacingApiService : IIRacingApiService
 
     /// <inheritdoc />
     public Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTimeOffset? from = null, bool? includeEndAfterFrom = null) =>
-        GetResources<SeasonRaceGuideResults>("season/race_guide", true, BuildParameters(["from", "include_end_after_from"], [from.HasValue ? from.Value.ToUniversalTime().ToString(Iso8601DateFormat, CultureInfo.InvariantCulture) : null, includeEndAfterFrom]));
+        GetResources<SeasonRaceGuideResults>("season/race_guide", true, BuildParameters(["from", "include_end_after_from"], [from.ToIso8601DateString(), includeEndAfterFrom]));
 
     /// <inheritdoc />
     public Task<SeasonSpectatorSubSessionIdsResult> GetSeasonSpectatorSubSessionIds(IEnumerable<int>? eventTypes = null) =>
