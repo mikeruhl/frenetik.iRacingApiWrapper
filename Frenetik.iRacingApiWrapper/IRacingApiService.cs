@@ -140,6 +140,9 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<LookupLicenseResult>> LookupLicenses() => GetResources<List<LookupLicenseResult>>("/lookup/licenses", true);
 
     /// <inheritdoc />
+    public Task<List<LookupResult>> LookupCurrentSeason() => GetResources<List<LookupResult>>("/lookup/current_season", true);
+
+    /// <inheritdoc />
     public async Task<MemberAwardsResponse<List<MemberAward>>> GetMemberAwards(int? customerId = null)
     {
         var response = await GetResources<MemberAwardsResponse<List<MemberAward>>>("/member/awards", false, BuildParameters(["cust_id"], [customerId]));

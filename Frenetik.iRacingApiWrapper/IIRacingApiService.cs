@@ -13,6 +13,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get car assets
     /// </summary>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<CarAsset>> GetCarAssets();
 
@@ -48,18 +51,27 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Category constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsCategories();
 
     /// <summary>
     /// Get Division constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsDivisions();
 
     /// <summary>
     /// Get EventType constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsEventTypes();
 
@@ -118,6 +130,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get hosted combined session by package id
     /// </summary>
+    /// <remarks>
+    /// Sessions that can be joined as a driver or spectator, and also includes non-league pending sessions for the user.
+    /// </remarks>
     /// <param name="packageId"></param>
     /// <returns></returns>
     Task<SessionResult> GetHostedCombinedSession(int? packageId = null);
@@ -125,6 +140,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get hosted sessions
     /// </summary>
+    /// <remarks>
+    /// Sessions that can be joined as a driver. Without spectator and non-league pending sessions for the user.
+    /// </remarks>
     /// <returns></returns>
     Task<SessionResult> GetHostedSessions();
 
@@ -353,8 +371,11 @@ public interface IIRacingApiService
     Task<List<SeriesResult>> GetSeries();
 
     /// <summary>
-    /// Get Series Assets (image paths are relative to https://images-static.iracing.com/)
+    /// Get Series Assets
     /// </summary>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns>Dictionary where key is series id and value is series asset</returns>
     Task<Dictionary<string, SeriesAsset>> GetSeriesAssets();
 
@@ -368,6 +389,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Series Seasons
     /// </summary>
+    /// <remarks>
+    /// To look up past seasons use both a season_year and season_quarter. Without both, the active seasons are returned.
+    /// </remarks>
     /// <param name="includeSeries"></param>
     /// <param name="seasonYear"></param>
     /// <param name="seasonQuarter"></param>
@@ -393,6 +417,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Series Stats
     /// </summary>
+    /// <remarks>
+    /// To get series and seasons for which standings should be available, filter the list by official: true.
+    /// </remarks>
     /// <returns></returns>
     Task<List<SeriesStats>> GetSeriesStats();
 
@@ -527,22 +554,29 @@ public interface IIRacingApiService
     Task<TeamResult> GetTeam(int teamId, bool? includeLicenses = null);
 
     /// <summary>
-    /// Get Team Membership (Always the authenticated member.)
+    /// Get Team Membership
     /// </summary>
+    /// <remarks>
+    /// Results for the authenticated member, if any.
+    /// </remarks>
     /// <returns></returns>
     Task<List<TeamMembershipResult>> GetTeamMembership();
 
     /// <summary>
-    /// Get Time Attack Season Results
+    /// Get Track Assets
     /// </summary>
-    /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<Dictionary<string, TrackDetailsResult>> GetTrackAssets();
 
     /// <summary>
     /// Get Tracks
     /// </summary>
-    /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<List<TrackResult>> GetTracks();
 
@@ -590,6 +624,15 @@ public interface IIRacingApiService
     Task<List<LookupLicenseResult>> LookupLicenses();
 
     /// <summary>
+    /// Lookup Current Season (Quarter and Year)
+    /// </summary>
+    /// <remarks>
+    /// Changes at midnight UTC on a Tuesday in March, June, September, and December.
+    /// </remarks>
+    /// <returns></returns>
+    Task<List<LookupResult>> LookupCurrentSeason();
+
+    /// <summary>
     /// Search for leagues based on various criteria.
     /// </summary>
     /// <param name="search">Will search against league name, description, owner, and league ID.</param>
@@ -625,6 +668,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Time Attack Member Season Results
     /// </summary>
+    /// <remarks>
+    /// Results for the authenticated member, if any.
+    /// </remarks>
     /// <param name="taCompSeasonId"></param>
     /// <returns></returns>
     Task<JsonElement> GetTimeAttackMemberSeasonResults(int taCompSeasonId);
