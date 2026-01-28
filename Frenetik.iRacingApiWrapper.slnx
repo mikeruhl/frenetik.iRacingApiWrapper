@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Tools/">
+    <Project Path="ApiCoverageAnalyzer/ApiCoverageAnalyzer.csproj" />
+  </Folder>
   <Project Path="Frenetik.iRacingApiWrapper.Tests/Frenetik.iRacingApiWrapper.Tests.csproj" />
   <Project Path="Frenetik.iRacingApiWrapper/Frenetik.iRacingApiWrapper.csproj" />
   <Project Path="TestWrapper.Bearer/TestWrapper.Bearer.csproj" />

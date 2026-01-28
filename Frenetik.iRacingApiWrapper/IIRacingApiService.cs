@@ -1,6 +1,7 @@
 ﻿using Frenetik.iRacingApiWrapper.Enums;
 using Frenetik.iRacingApiWrapper.Models;
 using Frenetik.iRacingApiWrapper.Models.MemberAwards;
+using System.Text.Json;
 
 namespace Frenetik.iRacingApiWrapper;
 
@@ -12,6 +13,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get car assets
     /// </summary>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<CarAsset>> GetCarAssets();
 
@@ -47,18 +51,27 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Category constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsCategories();
 
     /// <summary>
     /// Get Division constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsDivisions();
 
     /// <summary>
     /// Get EventType constants
     /// </summary>
+    /// <remarks>
+    /// Constant; returned directly as an array of objects.
+    /// </remarks>
     /// <returns></returns>
     Task<IEnumerable<Constant>> GetConstantsEventTypes();
 
@@ -104,7 +117,7 @@ public interface IIRacingApiService
     /// <param name="mine">If true, return only sessions created by this user.</param>
     /// <param name="packageId">If set, return only sessions using this car or track package ID.</param>
     /// <returns></returns>
-    Task<SessionResult> GetCustLeagueSessionResults(bool mine = false, int? packageId = null);
+    Task<SessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null);
 
     /// <summary>
     /// Gets documentation for all available endpoints, including required and optional parameters.
@@ -117,19 +130,19 @@ public interface IIRacingApiService
     /// <summary>
     /// Get hosted combined session by package id
     /// </summary>
+    /// <remarks>
+    /// Sessions that can be joined as a driver or spectator, and also includes non-league pending sessions for the user.
+    /// </remarks>
     /// <param name="packageId"></param>
     /// <returns></returns>
-    Task<SessionResult> GetHostedCombinedSession(int packageId);
-
-    /// <summary>
-    /// Get hosted combined sessions
-    /// </summary>
-    /// <returns></returns>
-    Task<SessionResult> GetHostedCombinedSessions();
+    Task<SessionResult> GetHostedCombinedSession(int? packageId = null);
 
     /// <summary>
     /// Get hosted sessions
     /// </summary>
+    /// <remarks>
+    /// Sessions that can be joined as a driver. Without spectator and non-league pending sessions for the user.
+    /// </remarks>
     /// <returns></returns>
     Task<SessionResult> GetHostedSessions();
 
@@ -150,7 +163,7 @@ public interface IIRacingApiService
     /// - Only leagues for which the requested customer is an admin and the league roster is not private are returned.</param>
     /// <param name="includeLeague"></param>
     /// <returns></returns>
-    Task<List<LeagueMembership>> GetLeagueMembership(int customerId, bool? includeLeague = null);
+    Task<List<LeagueMembership>> GetLeagueMembership(int? customerId = null, bool? includeLeague = null);
 
     /// <summary>
     /// Returns a League's Seasons
@@ -185,7 +198,7 @@ public interface IIRacingApiService
     /// <param name="customerIds"></param>
     /// <param name="includeLicenses"></param>
     /// <returns></returns>
-    Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool includeLicenses);
+    Task<MembersResult> GetMember(IEnumerable<int> customerIds, bool? includeLicenses = null);
 
     /// <summary>
     /// Get Member Awards
@@ -334,7 +347,7 @@ public interface IIRacingApiService
     /// <param name="from">ISO-8601 offset format. Defaults to the current time. Include sessions with start times up to 3 hours after this time. Times in the past will be rewritten to the current time.</param>
     /// <param name="includeEndAfterFrom">Include sessions which start before 'from' but end after.</param>
     /// <returns></returns>
-    Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTime? from = null, bool? includeEndAfterFrom = null);
+    Task<SeasonRaceGuideResults> GetSeasonRaceGuide(DateTimeOffset? from = null, bool? includeEndAfterFrom = null);
 
     /// <summary>
     /// Get Season Spectator SubSessionIds
@@ -358,8 +371,11 @@ public interface IIRacingApiService
     Task<List<SeriesResult>> GetSeries();
 
     /// <summary>
-    /// Get Series Assets (image paths are relative to https://images-static.iracing.com/)
+    /// Get Series Assets
     /// </summary>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns>Dictionary where key is series id and value is series asset</returns>
     Task<Dictionary<string, SeriesAsset>> GetSeriesAssets();
 
@@ -373,6 +389,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Series Seasons
     /// </summary>
+    /// <remarks>
+    /// To look up past seasons use both a season_year and season_quarter. Without both, the active seasons are returned.
+    /// </remarks>
     /// <param name="includeSeries"></param>
     /// <param name="seasonYear"></param>
     /// <param name="seasonQuarter"></param>
@@ -398,6 +417,9 @@ public interface IIRacingApiService
     /// <summary>
     /// Get Series Stats
     /// </summary>
+    /// <remarks>
+    /// To get series and seasons for which standings should be available, filter the list by official: true.
+    /// </remarks>
     /// <returns></returns>
     Task<List<SeriesStats>> GetSeriesStats();
 
@@ -429,9 +451,9 @@ public interface IIRacingApiService
     /// </summary>
     /// <param name="customerId">Defaults to the authenticated member.</param>
     /// <param name="year">Season year; if not supplied the current calendar year (UTC) is used.</param>
-    /// <param name="seasonId">Season (quarter) within the year; if not supplied the recap will be fore the entire year.</param>
+    /// <param name="season">Season (quarter) within the year; if not supplied the recap will be for the entire year.</param>
     /// <returns></returns>
-    Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? seasonId = null);
+    Task<StatsMemberRecapResult> GetStatsMemberRecap(int? customerId = null, int? year = null, int? season = null);
 
     /// <summary>
     /// Get Stats Member Recent Races
@@ -532,22 +554,29 @@ public interface IIRacingApiService
     Task<TeamResult> GetTeam(int teamId, bool? includeLicenses = null);
 
     /// <summary>
-    /// Get Team Membership (Always the authenticated member.)
+    /// Get Team Membership
     /// </summary>
+    /// <remarks>
+    /// Results for the authenticated member, if any.
+    /// </remarks>
     /// <returns></returns>
     Task<List<TeamMembershipResult>> GetTeamMembership();
 
     /// <summary>
-    /// Get Time Attack Season Results
+    /// Get Track Assets
     /// </summary>
-    /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<Dictionary<string, TrackDetailsResult>> GetTrackAssets();
 
     /// <summary>
     /// Get Tracks
     /// </summary>
-    /// <remarks>image paths are relative to https://images-static.iracing.com/</remarks>
+    /// <remarks>
+    /// Image paths are relative to https://images-static.iracing.com/
+    /// </remarks>
     /// <returns></returns>
     Task<List<TrackResult>> GetTracks();
 
@@ -595,6 +624,15 @@ public interface IIRacingApiService
     Task<List<LookupLicenseResult>> LookupLicenses();
 
     /// <summary>
+    /// Lookup Current Season (Quarter and Year)
+    /// </summary>
+    /// <remarks>
+    /// Changes at midnight UTC on a Tuesday in March, June, September, and December.
+    /// </remarks>
+    /// <returns></returns>
+    Task<List<LookupResult>> LookupCurrentSeason();
+
+    /// <summary>
     /// Search for leagues based on various criteria.
     /// </summary>
     /// <param name="search">Will search against league name, description, owner, and league ID.</param>
@@ -610,7 +648,7 @@ public interface IIRacingApiService
     /// <param name="sort">One of relevance, leaguename, displayname, rostercount. displayname is owners's name. Defaults to relevance.</param>
     /// <param name="order">One of asc or desc.  Defaults to asc.</param>
     /// <returns></returns>
-    Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, bool? minimumRosterCount = null, bool? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
+    Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null, int? minimumRosterCount = null, int? maximumRosterCount = null, int? lowerBound = null, int? upperBound = null, LeagueSortValue? sort = null, SortOrder? order = null);
 
     /// <summary>
     /// Get the league roster by id
@@ -626,4 +664,14 @@ public interface IIRacingApiService
     /// <param name="subsessionId">Subsession Id (required)</param>
     /// <returns></returns>
     Task<SessionRegDriversListResult> GetSessionRegDriversList(int subsessionId);
+
+    /// <summary>
+    /// Get Time Attack Member Season Results
+    /// </summary>
+    /// <remarks>
+    /// Results for the authenticated member, if any.
+    /// </remarks>
+    /// <param name="taCompSeasonId"></param>
+    /// <returns></returns>
+    Task<JsonElement> GetTimeAttackMemberSeasonResults(int taCompSeasonId);
 }
