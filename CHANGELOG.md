@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0]
+
+### Breaking Changes
+- **Removed deprecated authentication handlers**
+  - `BearerTokenDelegatingHandler` removed - use `PasswordLimitedTokenHandler` or `TokenContextHandler` instead
+  - `NoOpTokenProvider` removed - `TokenContextHandler` no longer requires a token provider
+  - See v4.2.0 migration guide for replacement patterns
+
+### Added
+- **Significantly expanded API endpoint coverage** with dozens of new endpoints and improved consistency:
+  - League roster endpoint (`GetLeagueRoster`)
+  - Flair lookup endpoint (`GetFlair`)
+  - Member awards with detailed instance data (`GetMemberAwards`, `MemberAwardInstance`)
+  - Team membership endpoint (`GetTeamMembership`)
+  - Session spectator subsession IDs (`GetSeasonSpectatorSubsessionIds`)
+  - Series season lists and schedules (`GetSeriesSeasonList`, `GetSeriesSeasonSchedule`)
+  - Session registered drivers list (`GetSessionRegDriversList`)
+  - Enhanced hosted session details endpoint
+- `HttpResponseStream` - stream-based HTTP response handling for improved performance with large responses
+- `DateTimeOffsetExtensions` - utility extensions for date/time handling
+- API Coverage Analyzer tool - developer utility for tracking endpoint implementation completeness
+
+### Changed
+- Improved parameter handling across all endpoints for better consistency with iRacing API specifications
+- Enhanced model definitions with additional properties and better type accuracy
+- Better alignment with official iRacing API documentation
+
+### Fixed
+- Corrected endpoint paths and parameter mappings for existing methods
+- Improved response model property names to match API responses
+- Fixed inconsistencies in optional parameter handling
+
 ## [4.2.2]
 
 ### Changed
@@ -378,6 +410,7 @@ See README for complete setup instructions including user secrets configuration.
 - Project initialization
 - Basic API wrapper structure
 
+[5.0.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.2.2...v5.0.0
 [4.2.1]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.2.0...v4.2.1
 [4.2.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/mikeruhl/frenetik.iRacingApiWrapper/compare/v4.0.0...v4.1.0
