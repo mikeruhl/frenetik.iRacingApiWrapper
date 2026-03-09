@@ -107,6 +107,21 @@ public class ConsoleReporter()
             Console.WriteLine();
         }
 
+        // Skipped response endpoints
+        var skippedResponseEndpoints = report.EndpointResults
+            .Where(e => e.ResponseModelResult is { IsSkipped: true })
+            .ToList();
+
+        if (skippedResponseEndpoints.Any())
+        {
+            Console.WriteLine($"Skipped Response Endpoints ({skippedResponseEndpoints.Count}):");
+            foreach (var endpoint in skippedResponseEndpoints)
+            {
+                Console.WriteLine($"  - {endpoint.Path}: {endpoint.ResponseModelResult!.SkipReason}");
+            }
+            Console.WriteLine();
+        }
+
         // Final summary
         if (report.MissingEndpoints.Count == 0 && parameterIssues.Count == 0 && responseIssues.Count == 0)
         {

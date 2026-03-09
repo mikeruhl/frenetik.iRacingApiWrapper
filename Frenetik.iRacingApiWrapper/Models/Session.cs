@@ -684,6 +684,18 @@ public class Session
     public string AiRosterName { get; set; } = string.Empty;
 
     /// <summary>
+    /// AI Min Skill
+    /// </summary>
+    [JsonPropertyName("ai_min_skill")]
+    public int AiMinSkill { get; set; }
+
+    /// <summary>
+    /// AI Max Skill
+    /// </summary>
+    [JsonPropertyName("ai_max_skill")]
+    public int AiMaxSkill { get; set; }
+
+    /// <summary>
     /// Heat Session Info
     /// </summary>
     [JsonPropertyName("heat_ses_info")]
