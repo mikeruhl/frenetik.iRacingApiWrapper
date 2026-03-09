@@ -60,10 +60,34 @@ namespace Frenetik.iRacingApiWrapper.Models
         public bool Complete { get; set; }
 
         /// <summary>
+        /// Connection Black Flag
+        /// </summary>
+        [JsonPropertyName("connection_black_flag")]
+        public bool ConnectionBlackFlag { get; set; }
+
+        /// <summary>
+        /// Consec Caution Within N Laps
+        /// </summary>
+        [JsonPropertyName("consec_caution_within_nlaps")]
+        public int ConsecCautionWithinNLaps { get; set; }
+
+        /// <summary>
+        /// Consec Cautions Single File
+        /// </summary>
+        [JsonPropertyName("consec_cautions_single_file")]
+        public bool ConsecCautionsSingleFile { get; set; }
+
+        /// <summary>
         /// Cross License
         /// </summary>
         [JsonPropertyName("cross_license")]
         public bool CrossLicense { get; set; }
+
+        /// <summary>
+        /// Distributed Matchmaking
+        /// </summary>
+        [JsonPropertyName("distributed_matchmaking")]
+        public bool DistributedMatchmaking { get; set; }
 
         /// <summary>
         /// Driver Change Rule
@@ -118,6 +142,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("has_supersessions")]
         public bool HasSupersessions { get; set; }
+
+        /// <summary>
+        /// Heat Session Info
+        /// </summary>
+        [JsonPropertyName("heat_ses_info")]
+        public SeriesSeasonsHeatSesInfo? HeatSesInfo { get; set; }
 
         /// <summary>
         /// Ignore License For Practice
@@ -211,6 +241,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public object? NextRaceSession { get; set; }
 
         /// <summary>
+        /// Num Fast Tows
+        /// </summary>
+        [JsonPropertyName("num_fast_tows")]
+        public int NumFastTows { get; set; }
+
+        /// <summary>
         /// Num Opt Laps
         /// </summary>
         [JsonPropertyName("num_opt_laps")]
@@ -271,6 +307,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public bool RegionCompetition { get; set; }
 
         /// <summary>
+        /// Rookie Season
+        /// </summary>
+        [JsonPropertyName("rookie_season")]
+        public string RookieSeason { get; set; } = string.Empty;
+
+        /// <summary>
         /// Restrict By Member
         /// </summary>
         [JsonPropertyName("restrict_by_member")]
@@ -319,6 +361,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public int SeasonYear { get; set; }
 
         /// <summary>
+        /// Score As Car Class Id
+        /// </summary>
+        [JsonPropertyName("score_as_carclassid")]
+        public int ScoreAsCarClassId { get; set; }
+
+        /// <summary>
         /// Send To Open Practice
         /// </summary>
         [JsonPropertyName("send_to_open_practice")]
@@ -340,7 +388,7 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// Start Date
         /// </summary>
         [JsonPropertyName("start_date")]
-        public string StartDate { get; set; } = string.Empty;
+        public DateTimeOffset StartDate { get; set; }
 
         /// <summary>
         /// Start On Qual Tire
@@ -439,10 +487,28 @@ namespace Frenetik.iRacingApiWrapper.Models
         public bool FullCourseCautions { get; set; }
 
         /// <summary>
+        /// Practice Length
+        /// </summary>
+        [JsonPropertyName("practice_length")]
+        public int PracticeLength { get; set; }
+
+        /// <summary>
         /// Qual Attached
         /// </summary>
         [JsonPropertyName("qual_attached")]
         public bool QualAttached { get; set; }
+
+        /// <summary>
+        /// Qualify Laps
+        /// </summary>
+        [JsonPropertyName("qualify_laps")]
+        public int QualifyLaps { get; set; }
+
+        /// <summary>
+        /// Qualify Length
+        /// </summary>
+        [JsonPropertyName("qualify_length")]
+        public int QualifyLength { get; set; }
 
         /// <summary>
         /// Race Lap Limit
@@ -461,6 +527,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("race_time_limit")]
         public int? RaceTimeLimit { get; set; }
+
+        /// <summary>
+        /// Race Week Car Class Ids
+        /// </summary>
+        [JsonPropertyName("race_week_car_class_ids")]
+        public List<int> RaceWeekCarClassIds { get; set; } = new();
 
         /// <summary>
         /// Race Week Cars
@@ -504,12 +576,6 @@ namespace Frenetik.iRacingApiWrapper.Models
         [JsonPropertyName("short_parade_lap")]
         public bool ShortParadeLap { get; set; }
 
-        /// <summary>
-        /// Simulated Time Multiplier
-        /// </summary>
-        [JsonPropertyName("simulated_time_multiplier")]
-        public int SimulatedTimeMultiplier { get; set; }
-
         //TODO: Find property type
         /// <summary>
         /// Special Event Type
@@ -521,7 +587,19 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// Start Date
         /// </summary>
         [JsonPropertyName("start_date")]
-        public string StartDate { get; set; } = string.Empty;
+        public DateTimeOffset StartDate { get; set; }
+
+        /// <summary>
+        /// Warmup Length
+        /// </summary>
+        [JsonPropertyName("warmup_length")]
+        public int WarmupLength { get; set; }
+
+        /// <summary>
+        /// Week End Time
+        /// </summary>
+        [JsonPropertyName("week_end_time")]
+        public DateTimeOffset WeekEndTime { get; set; }
 
         /// <summary>
         /// Start Type
@@ -716,6 +794,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public int TimeOfDay { get; set; }
 
         /// <summary>
+        /// Track Water
+        /// </summary>
+        [JsonPropertyName("track_water")]
+        public int TrackWater { get; set; }
+
+        /// <summary>
         /// Type
         /// </summary>
         [JsonPropertyName("type")]
@@ -738,6 +822,18 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("weather_url")]
         public string WeatherUrl { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Weather Var Initial
+        /// </summary>
+        [JsonPropertyName("weather_var_initial")]
+        public int WeatherVarInitial { get; set; }
+
+        /// <summary>
+        /// Weather Var Ongoing
+        /// </summary>
+        [JsonPropertyName("weather_var_ongoing")]
+        public int WeatherVarOngoing { get; set; }
 
         /// <summary>
         /// Wind Dir
@@ -763,6 +859,12 @@ namespace Frenetik.iRacingApiWrapper.Models
     /// </summary>
     public class SeriesSeasonsForecastOptions
     {
+        /// <summary>
+        /// Allow Fog
+        /// </summary>
+        [JsonPropertyName("allow_fog")]
+        public bool AllowFog { get; set; }
+
         /// <summary>
         /// Forecast Type
         /// </summary>
@@ -972,6 +1074,270 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("car_name_abbreviated")]
         public string CarNameAbbreviated { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// SeriesSeasonsHeatSesInfo
+    /// </summary>
+    public class SeriesSeasonsHeatSesInfo
+    {
+        /// <summary>
+        /// Consolation Delta Max Field Size
+        /// </summary>
+        [JsonPropertyName("consolation_delta_max_field_size")]
+        public int ConsolationDeltaMaxFieldSize { get; set; }
+
+        /// <summary>
+        /// Consolation Delta Session Laps
+        /// </summary>
+        [JsonPropertyName("consolation_delta_session_laps")]
+        public int ConsolationDeltaSessionLaps { get; set; }
+
+        /// <summary>
+        /// Consolation Delta Session Length Minutes
+        /// </summary>
+        [JsonPropertyName("consolation_delta_session_length_minutes")]
+        public int ConsolationDeltaSessionLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Consolation First Max Field Size
+        /// </summary>
+        [JsonPropertyName("consolation_first_max_field_size")]
+        public int ConsolationFirstMaxFieldSize { get; set; }
+
+        /// <summary>
+        /// Consolation First Session Laps
+        /// </summary>
+        [JsonPropertyName("consolation_first_session_laps")]
+        public int ConsolationFirstSessionLaps { get; set; }
+
+        /// <summary>
+        /// Consolation First Session Length Minutes
+        /// </summary>
+        [JsonPropertyName("consolation_first_session_length_minutes")]
+        public int ConsolationFirstSessionLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Consolation Num Position To Invert
+        /// </summary>
+        [JsonPropertyName("consolation_num_position_to_invert")]
+        public int ConsolationNumPositionToInvert { get; set; }
+
+        /// <summary>
+        /// Consolation Num To Consolation
+        /// </summary>
+        [JsonPropertyName("consolation_num_to_consolation")]
+        public int ConsolationNumToConsolation { get; set; }
+
+        /// <summary>
+        /// Consolation Num To Main
+        /// </summary>
+        [JsonPropertyName("consolation_num_to_main")]
+        public int ConsolationNumToMain { get; set; }
+
+        /// <summary>
+        /// Consolation Run Always
+        /// </summary>
+        [JsonPropertyName("consolation_run_always")]
+        public bool ConsolationRunAlways { get; set; }
+
+        /// <summary>
+        /// Consolation Scores Champ Points
+        /// </summary>
+        [JsonPropertyName("consolation_scores_champ_points")]
+        public bool ConsolationScoresChampPoints { get; set; }
+
+        /// <summary>
+        /// Created
+        /// </summary>
+        [JsonPropertyName("created")]
+        public string Created { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Customer Id
+        /// </summary>
+        [JsonPropertyName("cust_id")]
+        public int CustomerId { get; set; }
+
+        /// <summary>
+        /// Description
+        /// </summary>
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Heat Caution Type
+        /// </summary>
+        [JsonPropertyName("heat_caution_type")]
+        public int HeatCautionType { get; set; }
+
+        /// <summary>
+        /// Heat Info Id
+        /// </summary>
+        [JsonPropertyName("heat_info_id")]
+        public int HeatInfoId { get; set; }
+
+        /// <summary>
+        /// Heat Info Name
+        /// </summary>
+        [JsonPropertyName("heat_info_name")]
+        public string HeatInfoName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Heat Laps
+        /// </summary>
+        [JsonPropertyName("heat_laps")]
+        public int HeatLaps { get; set; }
+
+        /// <summary>
+        /// Heat Length Minutes
+        /// </summary>
+        [JsonPropertyName("heat_length_minutes")]
+        public int HeatLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Heat Max Field Size
+        /// </summary>
+        [JsonPropertyName("heat_max_field_size")]
+        public int HeatMaxFieldSize { get; set; }
+
+        /// <summary>
+        /// Heat Num From Each To Main
+        /// </summary>
+        [JsonPropertyName("heat_num_from_each_to_main")]
+        public int HeatNumFromEachToMain { get; set; }
+
+        /// <summary>
+        /// Heat Num Position To Invert
+        /// </summary>
+        [JsonPropertyName("heat_num_position_to_invert")]
+        public int HeatNumPositionToInvert { get; set; }
+
+        /// <summary>
+        /// Heat Scores Champ Points
+        /// </summary>
+        [JsonPropertyName("heat_scores_champ_points")]
+        public bool HeatScoresChampPoints { get; set; }
+
+        /// <summary>
+        /// Heat Session Minutes Estimate
+        /// </summary>
+        [JsonPropertyName("heat_session_minutes_estimate")]
+        public int HeatSessionMinutesEstimate { get; set; }
+
+        /// <summary>
+        /// Hidden
+        /// </summary>
+        [JsonPropertyName("hidden")]
+        public bool Hidden { get; set; }
+
+        /// <summary>
+        /// Main Laps
+        /// </summary>
+        [JsonPropertyName("main_laps")]
+        public int MainLaps { get; set; }
+
+        /// <summary>
+        /// Main Length Minutes
+        /// </summary>
+        [JsonPropertyName("main_length_minutes")]
+        public int MainLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Main Max Field Size
+        /// </summary>
+        [JsonPropertyName("main_max_field_size")]
+        public int MainMaxFieldSize { get; set; }
+
+        /// <summary>
+        /// Main Num Position To Invert
+        /// </summary>
+        [JsonPropertyName("main_num_position_to_invert")]
+        public int MainNumPositionToInvert { get; set; }
+
+        /// <summary>
+        /// Max Entrants
+        /// </summary>
+        [JsonPropertyName("max_entrants")]
+        public int MaxEntrants { get; set; }
+
+        /// <summary>
+        /// Open Practice
+        /// </summary>
+        [JsonPropertyName("open_practice")]
+        public bool OpenPractice { get; set; }
+
+        /// <summary>
+        /// Pre Main Practice Length Minutes
+        /// </summary>
+        [JsonPropertyName("pre_main_practice_length_minutes")]
+        public int PreMainPracticeLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Pre Qual Num To Main
+        /// </summary>
+        [JsonPropertyName("pre_qual_num_to_main")]
+        public int PreQualNumToMain { get; set; }
+
+        /// <summary>
+        /// Pre Qual Practice Length Minutes
+        /// </summary>
+        [JsonPropertyName("pre_qual_practice_length_minutes")]
+        public int PreQualPracticeLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Qual Caution Type
+        /// </summary>
+        [JsonPropertyName("qual_caution_type")]
+        public int QualCautionType { get; set; }
+
+        /// <summary>
+        /// Qual Laps
+        /// </summary>
+        [JsonPropertyName("qual_laps")]
+        public int QualLaps { get; set; }
+
+        /// <summary>
+        /// Qual Length Minutes
+        /// </summary>
+        [JsonPropertyName("qual_length_minutes")]
+        public int QualLengthMinutes { get; set; }
+
+        /// <summary>
+        /// Qual Num To Main
+        /// </summary>
+        [JsonPropertyName("qual_num_to_main")]
+        public int QualNumToMain { get; set; }
+
+        /// <summary>
+        /// Qual Open Delay Seconds
+        /// </summary>
+        [JsonPropertyName("qual_open_delay_seconds")]
+        public int QualOpenDelaySeconds { get; set; }
+
+        /// <summary>
+        /// Qual Scores Champ Points
+        /// </summary>
+        [JsonPropertyName("qual_scores_champ_points")]
+        public bool QualScoresChampPoints { get; set; }
+
+        /// <summary>
+        /// Qual Scoring
+        /// </summary>
+        [JsonPropertyName("qual_scoring")]
+        public int QualScoring { get; set; }
+
+        /// <summary>
+        /// Qual Style
+        /// </summary>
+        [JsonPropertyName("qual_style")]
+        public int QualStyle { get; set; }
+
+        /// <summary>
+        /// Race Style
+        /// </summary>
+        [JsonPropertyName("race_style")]
+        public int RaceStyle { get; set; }
     }
 }
 
