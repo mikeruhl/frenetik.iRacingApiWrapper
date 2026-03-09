@@ -101,7 +101,7 @@ public class ConsoleReporter()
                 Console.WriteLine($"  ✗ {endpoint.Path}");
                 foreach (var prop in endpoint.ResponseModelResult!.MissingProperties)
                 {
-                    Console.WriteLine($"      - Missing model property: {prop}");
+                    Console.WriteLine($"      - Missing model property: {prop.Path} ({prop.InferredType})");
                 }
             }
             Console.WriteLine();

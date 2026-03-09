@@ -1,4 +1,5 @@
 using ApiCoverageAnalyzer.Discovery;
+using ApiCoverageAnalyzer.Models;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
@@ -17,10 +18,10 @@ public class ResponseModelComparer(
     /// <summary>
     /// Finds JSON properties present in the response but not mapped in the model.
     /// </summary>
-    /// <returns>Tuple of (missing property paths, total properties checked)</returns>
-    public (List<string> MissingProperties, int TotalProperties) Compare(JsonElement json, Type modelType)
+    /// <returns>Tuple of (missing properties with inferred types, total properties checked)</returns>
+    public (List<MissingProperty> MissingProperties, int TotalProperties) Compare(JsonElement json, Type modelType)
     {
-        var missing = new List<string>();
+        var missing = new List<MissingProperty>();
         int total = 0;
         CompareRecursive(json, modelType, "", missing, ref total, 0);
         return (missing, total);
@@ -30,18 +31,23 @@ public class ResponseModelComparer(
         JsonElement json,
         Type modelType,
         string path,
-        List<string> missing,
+        List<MissingProperty> missing,
         ref int total,
         int depth)
     {
         if (depth > MaxDepth) return;
 
-        // Unwrap arrays — examine the first element to infer structure
+        // Unwrap arrays — examine the first non-null element to infer structure
         if (json.ValueKind == JsonValueKind.Array)
         {
-            var enumerator = json.EnumerateArray();
-            if (enumerator.MoveNext() && enumerator.Current.ValueKind == JsonValueKind.Object)
-                CompareRecursive(enumerator.Current, modelType, path, missing, ref total, depth);
+            foreach (var element in json.EnumerateArray())
+            {
+                if (element.ValueKind == JsonValueKind.Object)
+                {
+                    CompareRecursive(element, modelType, path, missing, ref total, depth);
+                    break;
+                }
+            }
             return;
         }
 
@@ -57,7 +63,11 @@ public class ResponseModelComparer(
             if (!modelProps.TryGetValue(jsonProp.Name, out var nestedType))
             {
                 logger.LogDebug("Missing model property: {Path}", propPath);
-                missing.Add(propPath);
+                missing.Add(new MissingProperty
+                {
+                    Path = propPath,
+                    InferredType = InferType(jsonProp.Value, depth)
+                });
             }
             else if (nestedType != null &&
                      (jsonProp.Value.ValueKind == JsonValueKind.Object ||
@@ -67,5 +77,46 @@ public class ResponseModelComparer(
                 CompareRecursive(jsonProp.Value, nestedType, propPath, missing, ref total, depth + 1);
             }
         }
+    }
+
+    private static readonly string[] DateTimeFormats =
+    [
+        "yyyy-MM-ddTHH:mm:ssZ",
+        "yyyy-MM-ddTHH:mm:ss.fffZ",
+        "yyyy-MM-ddTHH:mm:ss.ffffffZ"
+    ];
+
+    private static string InferType(JsonElement element, int depth = 0) => element.ValueKind switch
+    {
+        JsonValueKind.String => IsDateTime(element.GetString()) ? "datetime" : "string",
+        JsonValueKind.True or JsonValueKind.False => "bool",
+        JsonValueKind.Null => "null",
+        JsonValueKind.Object => depth < MaxDepth ? InferObjectType(element, depth) : "object",
+        JsonValueKind.Array => InferArrayType(element, depth),
+        JsonValueKind.Number => element.TryGetInt64(out _) ? "int" : "double",
+        _ => "unknown"
+    };
+
+    private static string InferObjectType(JsonElement obj, int depth)
+    {
+        var props = obj.EnumerateObject()
+            .Select(p => $"{p.Name}: {InferType(p.Value, depth + 1)}");
+        return $"{{ {string.Join(", ", props)} }}";
+    }
+
+    private static bool IsDateTime(string? value) =>
+        value is not null &&
+        DateTime.TryParseExact(value, DateTimeFormats,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal, out _);
+
+    private static string InferArrayType(JsonElement array, int depth)
+    {
+        foreach (var element in array.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Null)
+                return $"{InferType(element, depth)}[]";
+        }
+        return "array";
     }
 }

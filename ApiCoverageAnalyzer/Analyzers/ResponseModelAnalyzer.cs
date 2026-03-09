@@ -58,12 +58,12 @@ public class ResponseModelAnalyzer(
             return result;
         }
 
-        // Fetch actual JSON response using the API path
-        var json = await fetcher.FetchAsync(endpoint.ApiPath);
+        // Fetch actual JSON response using the API path, passing parameters for endpoints that require them
+        var json = await fetcher.FetchAsync(endpoint.ApiPath, endpoint.Parameters);
         if (json == null)
         {
             result.IsSkipped = true;
-            result.SkipReason = "Could not fetch response (may require required parameters or elevated permissions)";
+            result.SkipReason = "Could not fetch response (required parameter sample values missing from AnalyzerSettings, or elevated permissions needed)";
             return result;
         }
 
@@ -75,7 +75,7 @@ public class ResponseModelAnalyzer(
         if (missing.Count > 0)
         {
             logger.LogWarning("{Path}: {Count} JSON properties not mapped in {Model}: {Props}",
-                endpointKey, missing.Count, modelType.Name, string.Join(", ", missing));
+                endpointKey, missing.Count, modelType.Name, string.Join(", ", missing.Select(m => m.Path)));
         }
 
         return result;

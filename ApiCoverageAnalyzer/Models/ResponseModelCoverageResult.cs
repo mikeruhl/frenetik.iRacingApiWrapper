@@ -3,6 +3,18 @@ using System.Text.Json.Serialization;
 namespace ApiCoverageAnalyzer.Models;
 
 /// <summary>
+/// A JSON property present in the API response but not mapped in the C# model
+/// </summary>
+public class MissingProperty
+{
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = string.Empty;
+
+    [JsonPropertyName("inferred_type")]
+    public string InferredType { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Response model coverage result for a single endpoint
 /// </summary>
 public class ResponseModelCoverageResult
@@ -29,7 +41,7 @@ public class ResponseModelCoverageResult
     /// JSON properties present in the response but missing from the model
     /// </summary>
     [JsonPropertyName("missing_properties")]
-    public List<string> MissingProperties { get; set; } = new();
+    public List<MissingProperty> MissingProperties { get; set; } = new();
 
     /// <summary>
     /// Total number of JSON properties encountered in the response

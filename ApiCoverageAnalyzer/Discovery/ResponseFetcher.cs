@@ -1,9 +1,11 @@
+using ApiCoverageAnalyzer.Analyzers;
 using Frenetik.iRacingApiWrapper;
 using Frenetik.iRacingApiWrapper.Config;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Web;
 
 namespace ApiCoverageAnalyzer.Discovery;
 
@@ -13,19 +15,49 @@ namespace ApiCoverageAnalyzer.Discovery;
 public class ResponseFetcher(
     IHttpClientFactory httpClientFactory,
     IOptions<IRacingDataSettings> settings,
+    IOptions<AnalyzerSettings> analyzerSettings,
     ILogger<ResponseFetcher> logger)
 {
     private readonly string _baseUrl = settings.Value.BaseUrl;
 
     /// <summary>
     /// Fetches the raw JSON for an endpoint path (e.g., "/series/seasons").
-    /// Handles the link-following pattern used by most iRacing API endpoints.
-    /// Returns null if the call fails (endpoint requires parameters, auth issues, etc.).
+    /// If the endpoint has required parameters, builds a query string from
+    /// <see cref="AnalyzerSettings.SampleParameterValues"/>.
+    /// Returns null if the call fails or required parameters have no sample values.
     /// </summary>
-    public async Task<JsonElement?> FetchAsync(string apiPath)
+    public async Task<JsonElement?> FetchAsync(string apiPath, Dictionary<string, EndpointParameter>? parameters = null)
     {
         // Ensure path starts with /
         var path = apiPath.StartsWith('/') ? apiPath : $"/{apiPath}";
+
+        // Append query string for required parameters using configured sample values
+        var requiredParams = parameters?.Where(p => p.Value.Required).ToList();
+        if (requiredParams is { Count: > 0 })
+        {
+            var sample = analyzerSettings.Value.SampleParameterValues;
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            var missingValues = new List<string>();
+
+            foreach (var (name, _) in requiredParams)
+            {
+                if (sample.TryGetValue(name, out var value))
+                    query[name] = value;
+                else
+                    missingValues.Add(name);
+            }
+
+            if (missingValues.Count > 0)
+            {
+                logger.LogDebug(
+                    "Skipping {Path} — no sample values configured for required params: {Params}",
+                    apiPath, string.Join(", ", missingValues));
+                return null;
+            }
+
+            path = $"{path}?{query}";
+        }
+
         var url = $"{_baseUrl}/data{path}";
 
         try

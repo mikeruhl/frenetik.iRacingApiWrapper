@@ -30,4 +30,11 @@ public class AnalyzerSettings
     /// Whether to fail the build if thresholds are not met
     /// </summary>
     public bool FailOnThresholdViolation { get; set; } = false;
+
+    /// <summary>
+    /// Sample values to use when fetching endpoints that require parameters.
+    /// Key: API parameter name (snake_case), Value: sample value string.
+    /// Example: { "cust_id": "12345", "season_id": "4771" }
+    /// </summary>
+    public Dictionary<string, string> SampleParameterValues { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
