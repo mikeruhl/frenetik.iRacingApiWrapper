@@ -65,6 +65,12 @@ public class CarClass
         public int CarId { get; set; }
 
         /// <summary>
+        /// Rain Enabled
+        /// </summary>
+        [JsonPropertyName("rain_enabled")]
+        public bool RainEnabled { get; set; }
+
+        /// <summary>
         /// Whether car is retired
         /// </summary>
         [JsonPropertyName("retired")]

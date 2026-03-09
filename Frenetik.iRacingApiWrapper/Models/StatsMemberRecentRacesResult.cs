@@ -126,6 +126,30 @@ public class StatsMemberRecentRacesHelmetRace
     public int SeasonId { get; set; }
 
     /// <summary>
+    /// Season Year
+    /// </summary>
+    [JsonPropertyName("season_year")]
+    public int SeasonYear { get; set; }
+
+    /// <summary>
+    /// Season Quarter
+    /// </summary>
+    [JsonPropertyName("season_quarter")]
+    public int SeasonQuarter { get; set; }
+
+    /// <summary>
+    /// Race Week Num
+    /// </summary>
+    [JsonPropertyName("race_week_num")]
+    public int RaceWeekNum { get; set; }
+
+    /// <summary>
+    /// Drop Race
+    /// </summary>
+    [JsonPropertyName("drop_race")]
+    public bool DropRace { get; set; }
+
+    /// <summary>
     /// Series Id
     /// </summary>
     [JsonPropertyName("series_id")]

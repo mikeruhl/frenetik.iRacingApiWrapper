@@ -96,6 +96,24 @@ public class Weather
     public List<int> SimulatedTimeOffsets { get; set; } = new List<int>();
 
     /// <summary>
+    /// Allow Fog
+    /// </summary>
+    [JsonPropertyName("allow_fog")]
+    public bool AllowFog { get; set; }
+
+    /// <summary>
+    /// Precip Option
+    /// </summary>
+    [JsonPropertyName("precip_option")]
+    public int PrecipOption { get; set; }
+
+    /// <summary>
+    /// Track Water
+    /// </summary>
+    [JsonPropertyName("track_water")]
+    public int TrackWater { get; set; }
+
+    /// <summary>
     /// Simulated Time Multiplier
     /// </summary>
     [JsonPropertyName("simulated_time_multiplier")]

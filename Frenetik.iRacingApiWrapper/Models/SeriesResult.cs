@@ -30,6 +30,12 @@ public class SeriesResult
     public bool Eligible { get; set; }
 
     /// <summary>
+    /// First Season
+    /// </summary>
+    [JsonPropertyName("first_season")]
+    public object? FirstSeason { get; set; }
+
+    /// <summary>
     /// Forum Url
     /// </summary>
     [JsonPropertyName("forum_url")]

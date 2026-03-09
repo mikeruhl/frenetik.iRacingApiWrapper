@@ -117,7 +117,7 @@ public interface IIRacingApiService
     /// <param name="mine">If true, return only sessions created by this user.</param>
     /// <param name="packageId">If set, return only sessions using this car or track package ID.</param>
     /// <returns></returns>
-    Task<SessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null);
+    Task<LeagueSessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null);
 
     /// <summary>
     /// Gets documentation for all available endpoints, including required and optional parameters.

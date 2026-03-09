@@ -186,6 +186,12 @@ public class Season
     public bool Official { get; set; }
 
     /// <summary>
+    /// Car Switching
+    /// </summary>
+    [JsonPropertyName("car_switching")]
+    public bool CarSwitching { get; set; }
+
+    /// <summary>
     /// Driver Changes
     /// </summary>
     [JsonPropertyName("driver_changes")]
@@ -220,6 +226,12 @@ public class Season
     /// </summary>
     [JsonPropertyName("car_classes")]
     public List<StatCarClass> CarClasses { get; set; } = new List<StatCarClass>();
+
+    /// <summary>
+    /// Race Weeks
+    /// </summary>
+    [JsonPropertyName("race_weeks")]
+    public List<StatRaceWeek> RaceWeeks { get; set; } = new List<StatRaceWeek>();
 }
 
 /// <summary>

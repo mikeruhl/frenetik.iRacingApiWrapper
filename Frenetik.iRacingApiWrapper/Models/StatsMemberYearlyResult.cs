@@ -114,6 +114,12 @@ public class StatsMemberYearlyStat
     public double LapsLedPercentage { get; set; }
 
     /// <summary>
+    /// Poles Percentage
+    /// </summary>
+    [JsonPropertyName("poles_percentage")]
+    public double PolesPercentage { get; set; }
+
+    /// <summary>
     /// Year
     /// </summary>
     [JsonPropertyName("year")]

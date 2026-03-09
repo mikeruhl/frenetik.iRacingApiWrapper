@@ -636,6 +636,60 @@ public class Session
     public int MaxIr { get; set; }
 
     /// <summary>
+    /// Connection Black Flag
+    /// </summary>
+    [JsonPropertyName("connection_black_flag")]
+    public bool ConnectionBlackFlag { get; set; }
+
+    /// <summary>
+    /// Consec Caution Within N Laps
+    /// </summary>
+    [JsonPropertyName("consec_caution_within_nlaps")]
+    public int ConsecCautionWithinNLaps { get; set; }
+
+    /// <summary>
+    /// Adaptive AI Enabled
+    /// </summary>
+    [JsonPropertyName("adaptive_ai_enabled")]
+    public bool AdaptiveAiEnabled { get; set; }
+
+    /// <summary>
+    /// Adaptive AI Difficulty
+    /// </summary>
+    [JsonPropertyName("adaptive_ai_difficulty")]
+    public int AdaptiveAiDifficulty { get; set; }
+
+    /// <summary>
+    /// Max Visor Tearoffs
+    /// </summary>
+    [JsonPropertyName("max_visor_tearoffs")]
+    public int MaxVisorTearoffs { get; set; }
+
+    /// <summary>
+    /// Category Id
+    /// </summary>
+    [JsonPropertyName("category_id")]
+    public int CategoryId { get; set; }
+
+    /// <summary>
+    /// Category
+    /// </summary>
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// AI Roster Name
+    /// </summary>
+    [JsonPropertyName("ai_roster_name")]
+    public string AiRosterName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Heat Session Info
+    /// </summary>
+    [JsonPropertyName("heat_ses_info")]
+    public object? HeatSesInfo { get; set; }
+
+    /// <summary>
     /// EligibilityResponse
     /// </summary>
     public class EligibilityResponse
@@ -749,6 +803,12 @@ public class Session
         /// </summary>
         [JsonPropertyName("config_name")]
         public string ConfigName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Category Id
+        /// </summary>
+        [JsonPropertyName("category_id")]
+        public int CategoryId { get; set; }
     }
 
 
