@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Web;
 
 namespace ApiCoverageAnalyzer.Discovery;
 
@@ -36,13 +35,13 @@ public class ResponseFetcher(
         if (requiredParams is { Count: > 0 })
         {
             var sample = analyzerSettings.Value.SampleParameterValues;
-            var query = HttpUtility.ParseQueryString(string.Empty);
+            var queryParts = new List<string>();
             var missingValues = new List<string>();
 
             foreach (var (name, _) in requiredParams)
             {
-                if (sample.TryGetValue(name, out var value))
-                    query[name] = value;
+                if (sample.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value))
+                    queryParts.Add($"{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}");
                 else
                     missingValues.Add(name);
             }
@@ -55,7 +54,7 @@ public class ResponseFetcher(
                 return null;
             }
 
-            path = $"{path}?{query}";
+            path = $"{path}?{string.Join("&", queryParts)}";
         }
 
         var url = $"{_baseUrl}/data{path}";

@@ -31,7 +31,7 @@ public class CoverageCoordinator(
             if (mode == "quick")
             {
                 // Run static analysis only
-                logger.LogInformation("Running static analysis (endpoints + parameters)...");
+                logger.LogInformation("Running static analysis (endpoints, parameters + response models)...");
                 await RunStaticAnalysisAsync(report);
             }
             else if (mode == "full")
