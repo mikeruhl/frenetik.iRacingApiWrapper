@@ -38,6 +38,12 @@ public class EndpointCoverageResult
     public ParameterCoverageResult? ParameterResult { get; set; }
 
     /// <summary>
+    /// Response model coverage details
+    /// </summary>
+    [JsonPropertyName("response_model_result")]
+    public ResponseModelCoverageResult? ResponseModelResult { get; set; }
+
+    /// <summary>
     /// Error message if analysis failed
     /// </summary>
     [JsonPropertyName("error_message")]

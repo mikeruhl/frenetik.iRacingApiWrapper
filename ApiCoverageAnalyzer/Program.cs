@@ -1,6 +1,7 @@
 using ApiCoverageAnalyzer.Analyzers;
 using ApiCoverageAnalyzer.Comparers;
 using ApiCoverageAnalyzer.Discovery;
+using ApiCoverageAnalyzer.Models;
 using ApiCoverageAnalyzer.Reporters;
 using ApiCoverageAnalyzer.Utilities;
 using Frenetik.iRacingApiWrapper;
@@ -72,14 +73,18 @@ class Program
         builder.Services.AddSingleton<MethodPathExtractor>();
         builder.Services.AddSingleton<WrapperMethodDiscovery>();
         builder.Services.AddSingleton<ModelDiscovery>();
+        builder.Services.AddSingleton<ModelPropertyExtractor>();
+        builder.Services.AddSingleton<ResponseFetcher>();
 
         // Register comparers
         builder.Services.AddSingleton<EndpointComparer>();
         builder.Services.AddSingleton<ParameterComparer>();
+        builder.Services.AddSingleton<ResponseModelComparer>();
 
         // Register analyzers
         builder.Services.AddSingleton<EndpointCoverageAnalyzer>();
         builder.Services.AddSingleton<ParameterCoverageAnalyzer>();
+        builder.Services.AddSingleton<ResponseModelAnalyzer>();
         builder.Services.AddSingleton<CoverageCoordinator>();
 
         // Register utilities
