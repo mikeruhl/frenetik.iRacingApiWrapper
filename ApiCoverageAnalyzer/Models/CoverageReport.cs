@@ -90,4 +90,22 @@ public class CoverageSummary
     /// </summary>
     [JsonPropertyName("covered_parameters")]
     public int CoveredParameters { get; set; }
+
+    /// <summary>
+    /// Total number of JSON response properties checked across all endpoints
+    /// </summary>
+    [JsonPropertyName("total_response_properties")]
+    public int TotalResponseProperties { get; set; }
+
+    /// <summary>
+    /// Number of JSON response properties mapped in the model
+    /// </summary>
+    [JsonPropertyName("covered_response_properties")]
+    public int CoveredResponseProperties { get; set; }
+
+    /// <summary>
+    /// Number of endpoints skipped for response model analysis
+    /// </summary>
+    [JsonPropertyName("skipped_response_endpoints")]
+    public int SkippedResponseEndpoints { get; set; }
 }

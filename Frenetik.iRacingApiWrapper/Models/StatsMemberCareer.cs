@@ -112,5 +112,11 @@ public class StatsMemberCareerStat
     /// </summary>
     [JsonPropertyName("laps_led_percentage")]
     public double LapsLedPercentage { get; set; }
+
+    /// <summary>
+    /// Poles Percentage
+    /// </summary>
+    [JsonPropertyName("poles_percentage")]
+    public double PolesPercentage { get; set; }
 }
 

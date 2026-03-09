@@ -53,6 +53,30 @@ public class Car
     public string CarDirPath { get; set; } = string.Empty;
 
     /// <summary>
+    /// Folder
+    /// </summary>
+    [JsonPropertyName("folder")]
+    public string Folder { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Logo
+    /// </summary>
+    [JsonPropertyName("logo")]
+    public string Logo { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Small Image
+    /// </summary>
+    [JsonPropertyName("small_image")]
+    public string SmallImage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Sponsor Logo
+    /// </summary>
+    [JsonPropertyName("sponsor_logo")]
+    public string SponsorLogo { get; set; } = string.Empty;
+
+    /// <summary>
     /// Car Id
     /// </summary>
     [JsonPropertyName("car_id")]

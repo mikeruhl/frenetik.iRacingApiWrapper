@@ -968,6 +968,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public int TemperatureUnits { get; set; }
 
         /// <summary>
+        /// Wind Dir
+        /// </summary>
+        [JsonPropertyName("wind_dir")]
+        public int WindDir { get; set; }
+
+        /// <summary>
         /// Wind High
         /// </summary>
         [JsonPropertyName("wind_high")]

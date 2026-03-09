@@ -190,6 +190,12 @@ public class RecentAward
     /// </summary>
     [JsonPropertyName("achievement")]
     public bool Achievement { get; set; }
+
+    /// <summary>
+    /// Has Pdf
+    /// </summary>
+    [JsonPropertyName("has_pdf")]
+    public bool HasPdf { get; set; }
 }
 
 /// <summary>
@@ -280,6 +286,18 @@ public class MemberProfileInfo
     /// </summary>
     [JsonPropertyName("member_since")]
     public string MemberSince { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Country
+    /// </summary>
+    [JsonPropertyName("country")]
+    public string Country { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Country Code
+    /// </summary>
+    [JsonPropertyName("country_code")]
+    public string CountryCode { get; set; } = string.Empty;
 
     /// <summary>
     /// Flair Id
@@ -436,6 +454,18 @@ public class License
     /// </summary>
     [JsonPropertyName("mpr_num_tts")]
     public int MprNumTts { get; set; }
+
+    /// <summary>
+    /// Category Name
+    /// </summary>
+    [JsonPropertyName("category_name")]
+    public string CategoryName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Seq
+    /// </summary>
+    [JsonPropertyName("seq")]
+    public int Seq { get; set; }
 }
 
 /// <summary>
@@ -562,6 +592,18 @@ public class LicenseHistory
     /// </summary>
     [JsonPropertyName("group_id")]
     public int GroupId { get; set; }
+
+    /// <summary>
+    /// Category Name
+    /// </summary>
+    [JsonPropertyName("category_name")]
+    public string CategoryName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Seq
+    /// </summary>
+    [JsonPropertyName("seq")]
+    public int Seq { get; set; }
 }
 
 /// <summary>

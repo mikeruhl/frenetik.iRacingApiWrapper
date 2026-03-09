@@ -5,6 +5,12 @@ namespace Frenetik.iRacingApiWrapper.Models;
 public class SessionResult
 {
     /// <summary>
+    /// Sequence
+    /// </summary>
+    [JsonPropertyName("sequence")]
+    public int Sequence { get; set; }
+
+    /// <summary>
     /// Subscribed
     /// </summary>
     [JsonPropertyName("subscribed")]

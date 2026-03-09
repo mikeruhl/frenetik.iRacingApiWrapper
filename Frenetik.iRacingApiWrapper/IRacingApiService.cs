@@ -95,7 +95,7 @@ public class IRacingApiService : IIRacingApiService
     public Task<SessionResult> GetHostedSessions() => GetResources<SessionResult>("/hosted/sessions", true);
 
     /// <inheritdoc />
-    public Task<SessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null) => GetResources<SessionResult>("/league/cust_league_sessions", true, BuildParameters(["mine", "package_id"], [mine, packageId]));
+    public Task<LeagueSessionResult> GetCustLeagueSessionResults(bool? mine = null, int? packageId = null) => GetResources<LeagueSessionResult>("/league/cust_league_sessions", true, BuildParameters(["mine", "package_id"], [mine, packageId]));
 
     /// <inheritdoc />
     public Task<LeagueResult> SearchLeagues(string? search = null, string? tag = null, bool? restrictToMember = null, bool? restrictToRecruiting = null, bool? restrictToFriends = null, bool? restrictToWatched = null,

@@ -12,8 +12,15 @@ public class StatsMemberRecapResult
     public int Year { get; set; }
 
     /// <summary>
+    /// Customer Id
+    /// </summary>
+    [JsonPropertyName("cust_id")]
+    public int CustId { get; set; }
+
+    /// <summary>
     /// Stats
     /// </summary>
+    [JsonPropertyName("stats")]
     public StatsMemberRecap Stats { get; set; } = new StatsMemberRecap();
 
     /// <summary>

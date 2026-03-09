@@ -31,6 +31,7 @@ public class EndpointComparer(
         foreach (var (endpointKey, endpointDetails) in apiEndpoints)
         {
             // Try to match endpoint by its link (actual path)
+            var apiPath = PathNormalizer.ExtractPathFromUrl(endpointDetails.Link);
             var matchedMethod = FindMatchingMethod(endpointKey, endpointDetails.Link, pathToMethodMap);
 
             if (matchedMethod is not null)
@@ -40,6 +41,7 @@ public class EndpointComparer(
                     EndpointPath = endpointKey,
                     MethodName = matchedMethod.Name,
                     Method = matchedMethod,
+                    ApiPath = apiPath,
                     Parameters = endpointDetails.Parameters.ToDictionary(
                         p => p.Key,
                         p => new EndpointParameter

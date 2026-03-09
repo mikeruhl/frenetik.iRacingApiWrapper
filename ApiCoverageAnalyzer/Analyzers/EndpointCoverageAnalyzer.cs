@@ -57,6 +57,11 @@ public class MatchedEndpoint
     public string MethodName { get; set; } = string.Empty;
     public MethodInfo Method { get; set; } = null!;
     public Dictionary<string, EndpointParameter> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// Actual API path used for HTTP calls (e.g., "/series/seasons"), extracted from the endpoint link
+    /// </summary>
+    public string ApiPath { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -78,6 +78,12 @@ public class TrackResult
     public DateTime FirstSale { get; set; }
 
     /// <summary>
+    /// Folder
+    /// </summary>
+    [JsonPropertyName("folder")]
+    public string Folder { get; set; } = string.Empty;
+
+    /// <summary>
     /// Free With Subscription
     /// </summary>
     [JsonPropertyName("free_with_subscription")]
@@ -124,6 +130,12 @@ public class TrackResult
     /// </summary>
     [JsonPropertyName("is_dirt")]
     public bool IsDirt { get; set; }
+
+    /// <summary>
+    /// Logo
+    /// </summary>
+    [JsonPropertyName("logo")]
+    public string Logo { get; set; } = string.Empty;
 
     /// <summary>
     /// Is Oval
@@ -228,6 +240,18 @@ public class TrackResult
     public bool Purchasable { get; set; }
 
     /// <summary>
+    /// Rain Enabled
+    /// </summary>
+    [JsonPropertyName("rain_enabled")]
+    public bool RainEnabled { get; set; }
+
+    /// <summary>
+    /// Small Image
+    /// </summary>
+    [JsonPropertyName("small_image")]
+    public string SmallImage { get; set; } = string.Empty;
+
+    /// <summary>
     /// Qualify Laps
     /// </summary>
     [JsonPropertyName("qualify_laps")]
@@ -298,6 +322,18 @@ public class TrackResult
     /// </summary>
     [JsonPropertyName("track_config_length")]
     public double TrackConfigLength { get; set; }
+
+    /// <summary>
+    /// Track Type
+    /// </summary>
+    [JsonPropertyName("track_type")]
+    public int TrackType { get; set; }
+
+    /// <summary>
+    /// Track Type Text
+    /// </summary>
+    [JsonPropertyName("track_type_text")]
+    public string TrackTypeText { get; set; } = string.Empty;
 
     /// <summary>
     /// Track Dirpath

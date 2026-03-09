@@ -10,6 +10,7 @@ namespace ApiCoverageAnalyzer.Analyzers;
 public class CoverageCoordinator(
     EndpointCoverageAnalyzer endpointAnalyzer,
     ParameterCoverageAnalyzer parameterAnalyzer,
+    ResponseModelAnalyzer responseModelAnalyzer,
     ILogger<CoverageCoordinator> logger)
 {
     public async Task RunAsync(
@@ -30,7 +31,7 @@ public class CoverageCoordinator(
             if (mode == "quick")
             {
                 // Run static analysis only
-                logger.LogInformation("Running static analysis (endpoints + parameters)...");
+                logger.LogInformation("Running static analysis (endpoints, parameters + response models)...");
                 await RunStaticAnalysisAsync(report);
             }
             else if (mode == "full")
@@ -68,7 +69,10 @@ public class CoverageCoordinator(
         // Run parameter coverage analysis
         var parameterResults = await parameterAnalyzer.AnalyzeAsync(endpointResult.MatchedEndpoints);
 
-        // Populate report
+        // Run response model coverage analysis
+        var responseModelResults = await responseModelAnalyzer.AnalyzeAsync(endpointResult.MatchedEndpoints);
+
+        // Populate report — endpoints + parameters
         report.Summary.TotalEndpoints = endpointResult.TotalEndpoints;
         report.Summary.CoveredEndpoints = endpointResult.CoveredEndpoints;
         report.Summary.EndpointCoverage = endpointResult.CoveragePercentage;
@@ -79,7 +83,17 @@ public class CoverageCoordinator(
             ? (double)report.Summary.CoveredParameters / report.Summary.TotalParameters * 100.0
             : 100.0;
 
-        report.Summary.OverallCoverage = (report.Summary.EndpointCoverage + report.Summary.ParameterCoverage) / 2.0;
+        // Populate report — response model
+        var checkedResponses = responseModelResults.Where(r => !r.IsSkipped).ToList();
+        report.Summary.TotalResponseProperties = checkedResponses.Sum(r => r.TotalJsonProperties);
+        report.Summary.CoveredResponseProperties = checkedResponses.Sum(r => r.CoveredProperties);
+        report.Summary.SkippedResponseEndpoints = responseModelResults.Count(r => r.IsSkipped);
+        report.Summary.ResponseSchemaCoverage = report.Summary.TotalResponseProperties > 0
+            ? (double)report.Summary.CoveredResponseProperties / report.Summary.TotalResponseProperties * 100.0
+            : 100.0;
+
+        report.Summary.OverallCoverage =
+            (report.Summary.EndpointCoverage + report.Summary.ParameterCoverage + report.Summary.ResponseSchemaCoverage) / 3.0;
 
         report.MissingEndpoints = endpointResult.MissingEndpoints;
         report.EndpointResults = endpointResult.MatchedEndpoints
@@ -89,7 +103,8 @@ public class CoverageCoordinator(
                 Method = e.Value.MethodName,
                 Status = CoverageStatus.Complete,
                 ParameterResult = parameterResults.FirstOrDefault(p => p.EndpointPath == e.Key),
-                ParameterCoverage = parameterResults.FirstOrDefault(p => p.EndpointPath == e.Key)?.CoveragePercentage ?? 0
+                ParameterCoverage = parameterResults.FirstOrDefault(p => p.EndpointPath == e.Key)?.CoveragePercentage ?? 0,
+                ResponseModelResult = responseModelResults.FirstOrDefault(r => r.EndpointPath == e.Key)
             })
             .ToList();
     }

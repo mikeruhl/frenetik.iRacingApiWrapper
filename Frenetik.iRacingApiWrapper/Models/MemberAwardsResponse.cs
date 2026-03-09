@@ -21,6 +21,6 @@ public class MemberAwardsResponse<T> where T: class,new()
     /// <summary>
     /// Hydrated response data
     /// </summary>
-    [JsonIgnore]
+    [JsonPropertyName("data")]
     public T Data { get; set; } = new T();
 }

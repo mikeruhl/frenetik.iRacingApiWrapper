@@ -94,4 +94,10 @@ public class MemberAward
     /// </summary>
     [JsonPropertyName("achievement")]
     public bool Achievement { get; set; }
+
+    /// <summary>
+    /// Success
+    /// </summary>
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
 }

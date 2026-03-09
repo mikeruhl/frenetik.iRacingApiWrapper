@@ -20,6 +20,7 @@ public class ConsoleReporter()
         Console.WriteLine("Summary:");
         Console.WriteLine($"  Endpoint Coverage:        {report.Summary.CoveredEndpoints}/{report.Summary.TotalEndpoints} ({report.Summary.EndpointCoverage:F1}%) {GetStatusSymbol(report.Summary.EndpointCoverage)}");
         Console.WriteLine($"  Parameter Coverage:       {report.Summary.CoveredParameters}/{report.Summary.TotalParameters} ({report.Summary.ParameterCoverage:F1}%) {GetStatusSymbol(report.Summary.ParameterCoverage)}");
+        Console.WriteLine($"  Response Model Coverage:  {report.Summary.CoveredResponseProperties}/{report.Summary.TotalResponseProperties} ({report.Summary.ResponseSchemaCoverage:F1}%) {GetStatusSymbol(report.Summary.ResponseSchemaCoverage)} ({report.Summary.SkippedResponseEndpoints} endpoints skipped)");
         Console.WriteLine($"  Overall Coverage:         {report.Summary.OverallCoverage:F1}% {GetStatusSymbol(report.Summary.OverallCoverage)}");
         Console.WriteLine();
 
@@ -87,14 +88,48 @@ public class ConsoleReporter()
             Console.WriteLine();
         }
 
-        // Final summary
-        if (report.MissingEndpoints.Count == 0 && parameterIssues.Count == 0)
+        // Response model issues
+        var responseIssues = report.EndpointResults
+            .Where(e => e.ResponseModelResult is { IsSkipped: false, MissingProperties.Count: > 0 })
+            .ToList();
+
+        if (responseIssues.Any())
         {
-            Console.WriteLine("✓ All endpoints and parameters are covered!");
+            Console.WriteLine($"Response Model Issues ({responseIssues.Count} endpoints):");
+            foreach (var endpoint in responseIssues)
+            {
+                Console.WriteLine($"  ✗ {endpoint.Path}");
+                foreach (var prop in endpoint.ResponseModelResult!.MissingProperties)
+                {
+                    Console.WriteLine($"      - Missing model property: {prop.Path} ({prop.InferredType})");
+                }
+            }
+            Console.WriteLine();
+        }
+
+        // Skipped response endpoints
+        var skippedResponseEndpoints = report.EndpointResults
+            .Where(e => e.ResponseModelResult is { IsSkipped: true })
+            .ToList();
+
+        if (skippedResponseEndpoints.Any())
+        {
+            Console.WriteLine($"Skipped Response Endpoints ({skippedResponseEndpoints.Count}):");
+            foreach (var endpoint in skippedResponseEndpoints)
+            {
+                Console.WriteLine($"  - {endpoint.Path}: {endpoint.ResponseModelResult!.SkipReason}");
+            }
+            Console.WriteLine();
+        }
+
+        // Final summary
+        if (report.MissingEndpoints.Count == 0 && parameterIssues.Count == 0 && responseIssues.Count == 0)
+        {
+            Console.WriteLine("✓ All endpoints, parameters, and response models are covered!");
         }
         else
         {
-            Console.WriteLine($"Found {report.MissingEndpoints.Count} missing endpoints and {parameterIssues.Count} endpoints with parameter issues.");
+            Console.WriteLine($"Found {report.MissingEndpoints.Count} missing endpoints, {parameterIssues.Count} endpoints with parameter issues, and {responseIssues.Count} endpoints with response model issues.");
         }
 
         Console.WriteLine();
