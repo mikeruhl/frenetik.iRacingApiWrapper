@@ -68,7 +68,7 @@ public class LeagueRosterResult
         /// Date and time when the member joined the league
         /// </summary>
         [JsonPropertyName("league_member_since")]
-        public DateTime LeagueMemberSince { get; set; }
+        public DateTimeOffset LeagueMemberSince { get; set; }
 
         /// <summary>
         /// Car number assigned to the member

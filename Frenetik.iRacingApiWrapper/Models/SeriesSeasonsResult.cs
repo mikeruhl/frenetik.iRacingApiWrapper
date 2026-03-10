@@ -749,13 +749,13 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// Simulated Start Time
         /// </summary>
         [JsonPropertyName("simulated_start_time")]
-        public string SimulatedStartTime { get; set; } = string.Empty;
+        public DateTimeOffset SimulatedStartTime { get; set; }
 
         /// <summary>
         /// Simulated Start Utc Time
         /// </summary>
         [JsonPropertyName("simulated_start_utc_time")]
-        public string SimulatedStartUtcTime { get; set; } = string.Empty;
+        public DateTimeOffset SimulatedStartUtcTime { get; set; }
 
         /// <summary>
         /// Simulated Time Multiplier

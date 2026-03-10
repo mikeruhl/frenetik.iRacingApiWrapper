@@ -103,13 +103,13 @@ public class ResultsSearchSeriesChunkInfoData
     /// Start Time
     /// </summary>
     [JsonPropertyName("start_time")]
-    public string StartTime { get; set; } = string.Empty;
+    public DateTimeOffset StartTime { get; set; }
 
     /// <summary>
     /// End Time
     /// </summary>
     [JsonPropertyName("end_time")]
-    public string EndTime { get; set; } = string.Empty;
+    public DateTimeOffset EndTime { get; set; }
 
     /// <summary>
     /// License Category Id

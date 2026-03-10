@@ -69,7 +69,7 @@ public class StatsWorldRecordResultsChunkInfoData
     /// Practice Date
     /// </summary>
     [JsonPropertyName("practice_date")]
-    public DateTime PracticeDate { get; set; }
+    public DateTimeOffset PracticeDate { get; set; }
 
     /// <summary>
     /// Qualify Lap Time
@@ -81,7 +81,7 @@ public class StatsWorldRecordResultsChunkInfoData
     /// Qualify Date
     /// </summary>
     [JsonPropertyName("qualify_date")]
-    public DateTime QualifyDate { get; set; }
+    public DateTimeOffset QualifyDate { get; set; }
 
     /// <summary>
     /// Tt Lap Time
@@ -93,7 +93,7 @@ public class StatsWorldRecordResultsChunkInfoData
     /// Tt Date
     /// </summary>
     [JsonPropertyName("tt_date")]
-    public DateTime? TtDate { get; set; }
+    public DateTimeOffset? TtDate { get; set; }
 
     /// <summary>
     /// Race Lap Time
@@ -105,7 +105,7 @@ public class StatsWorldRecordResultsChunkInfoData
     /// Race Date
     /// </summary>
     [JsonPropertyName("race_date")]
-    public DateTime RaceDate { get; set; }
+    public DateTimeOffset RaceDate { get; set; }
 }
 
 /// <summary>

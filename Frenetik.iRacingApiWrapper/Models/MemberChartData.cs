@@ -51,7 +51,7 @@ public class DataItem
     /// When
     /// </summary>
     [JsonPropertyName("when")]
-    public DateTime When { get; set; }
+    public DateTimeOffset When { get; set; }
 
     /// <summary>
     /// Value

@@ -50,7 +50,7 @@ public class RaceGuideSession
     /// Start Time
     /// </summary>
     [JsonPropertyName("start_time")]
-    public DateTime StartTime { get; set; }
+    public DateTimeOffset StartTime { get; set; }
 
     /// <summary>
     /// Super Session
@@ -74,7 +74,7 @@ public class RaceGuideSession
     /// End Time
     /// </summary>
     [JsonPropertyName("end_time")]
-    public DateTime EndTime { get; set; }
+    public DateTimeOffset EndTime { get; set; }
 
     /// <summary>
     /// Session Id

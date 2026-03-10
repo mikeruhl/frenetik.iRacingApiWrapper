@@ -195,7 +195,7 @@ public class LapDataSessionInfo
     /// Start Time
     /// </summary>
     [JsonPropertyName("start_time")]
-    public string StartTime { get; set; } = string.Empty;
+    public DateTimeOffset StartTime { get; set; }
 
     /// <summary>
     /// Track

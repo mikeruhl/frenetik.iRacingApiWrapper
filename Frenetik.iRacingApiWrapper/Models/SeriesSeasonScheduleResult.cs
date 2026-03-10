@@ -183,7 +183,7 @@ public class SeriesSeasonSchedule
     /// Start Date
     /// </summary>
     [JsonPropertyName("start_date")]
-    public string StartDate { get; set; } = string.Empty;
+    public DateTimeOffset StartDate { get; set; }
 
     /// <summary>
     /// Start Type
@@ -225,7 +225,7 @@ public class SeriesSeasonSchedule
     /// Week End Time
     /// </summary>
     [JsonPropertyName("week_end_time")]
-    public string WeekEndTime { get; set; } = string.Empty;
+    public DateTimeOffset WeekEndTime { get; set; }
 }
 
 /// <summary>
@@ -345,7 +345,7 @@ public class SeriesSeasonScheduleRaceTimeDescriptor
     /// First Session Time
     /// </summary>
     [JsonPropertyName("first_session_time")]
-    public string FirstSessionTime { get; set; } = string.Empty;
+    public DateTimeOffset FirstSessionTime { get; set; }
 
     /// <summary>
     /// Repeat Minutes
@@ -369,7 +369,7 @@ public class SeriesSeasonScheduleRaceTimeDescriptor
     /// Start Date
     /// </summary>
     [JsonPropertyName("start_date")]
-    public string StartDate { get; set; } = string.Empty;
+    public DateTimeOffset StartDate { get; set; }
 
     /// <summary>
     /// Super Session
@@ -465,7 +465,7 @@ public class SeriesSeasonScheduleWeather
     /// Simulated Start Time
     /// </summary>
     [JsonPropertyName("simulated_start_time")]
-    public string SimulatedStartTime { get; set; } = string.Empty;
+    public DateTimeOffset SimulatedStartTime { get; set; }
 
     /// <summary>
     /// Simulated Time Multiplier

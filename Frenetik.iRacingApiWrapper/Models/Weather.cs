@@ -87,7 +87,7 @@ public class Weather
     /// Simulated Start Time
     /// </summary>
     [JsonPropertyName("simulated_start_time")]
-    public DateTime SimulatedStartTime { get; set; }
+    public DateTimeOffset SimulatedStartTime { get; set; }
 
     /// <summary>
     /// Simulated Time Offsets

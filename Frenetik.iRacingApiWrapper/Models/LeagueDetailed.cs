@@ -359,7 +359,7 @@ public class LeagueDetailed
         /// League Member Since
         /// </summary>
         [JsonPropertyName("league_member_since")]
-        public DateTime LeagueMemberSince { get; set; }
+        public DateTimeOffset LeagueMemberSince { get; set; }
 
         /// <summary>
         /// Car Number

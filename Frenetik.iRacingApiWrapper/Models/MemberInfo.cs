@@ -39,7 +39,7 @@ public class MemberInfo
     /// Member Since
     /// </summary>
     [JsonPropertyName("member_since")]
-    public DateTime MemberSince { get; set; }
+    public DateTimeOffset MemberSince { get; set; }
 
     /// <summary>
     /// Flair Id
@@ -69,7 +69,7 @@ public class MemberInfo
     /// Last Login
     /// </summary>
     [JsonPropertyName("last_login")]
-    public DateTime LastLogin { get; set; }
+    public DateTimeOffset LastLogin { get; set; }
 
     /// <summary>
     /// Read Tc

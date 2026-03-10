@@ -105,7 +105,7 @@ public class SessionInfo
     /// Start Time
     /// </summary>
     [JsonPropertyName("start_time")]
-    public DateTime StartTime { get; set; }
+    public DateTimeOffset StartTime { get; set; }
 
     /// <summary>
     /// Track

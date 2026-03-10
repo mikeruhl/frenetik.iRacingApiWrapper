@@ -597,7 +597,7 @@ public class Session
     /// End Time
     /// </summary>
     [JsonPropertyName("end_time")]
-    public DateTime EndTime { get; set; }
+    public DateTimeOffset EndTime { get; set; }
 
     /// <summary>
     /// Is Heat Racing
