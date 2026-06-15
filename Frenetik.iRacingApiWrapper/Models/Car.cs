@@ -170,7 +170,7 @@ public class Car
     /// Max power Adjustment Percentage
     /// </summary>
     [JsonPropertyName("max_power_adjust_pct")]
-    public int MaxPowerAdjustPct { get; set; } = 0;
+    public double MaxPowerAdjustPct { get; set; } = 0.0;
 
     /// <summary>
     /// Max Weight Penalty in Kg
@@ -182,7 +182,7 @@ public class Car
     /// Min power Adjustment Percentage
     /// </summary>
     [JsonPropertyName("min_power_adjust_pct")]
-    public int MinPowerAdjustPct { get; set; } = 0;
+    public double MinPowerAdjustPct { get; set; } = 0.0;
 
     /// <summary>
     /// Content Package Id
