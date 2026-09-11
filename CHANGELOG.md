@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.2]
+
+- Added response model properties found missing by API Coverage Analyzer:
+  `CarAsset` (`car_manual_link`, `slug`, fixed `detail_techspecs_copy` JSON key mapping),
+  `Car` (`car_config_defs`, `car_configs`, `min_weight_penalty_kg`, `video_link`),
+  `Session`/`Weather` (`equalize_fuel_fill_times`, `registered_teams`, qual/race setup fields, precip-before-session fields),
+  `MemberInfo` (`loaned_car_packages`, `loaned_track_packages`),
+  `SeriesResult` (`search_filters`),
+  `SeriesSeasonsResult` (`content_package_ids`, `equalize_fuel_fill_times`, `forecast_gen_option`, `rain_high`/`rain_low`, `skipi_rating_exchanges`),
+  `SeriesSeasonListResult` (`content_package_ids`, `equalize_fuel_fill_times`, `current_week_sched.track.config_name`),
+  `TrackResult` (`video_link`)
+- Fixed `ApiCoverageAnalyzer`'s `ResponseModelComparer` to correctly detect id-keyed dictionary responses (e.g. `car/assets`) instead of misreporting every id key as a missing model property
+
 ## [5.0.1]
 
 - Update response type properties on Models/SeriesSeasonsResult.cs 
