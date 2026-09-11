@@ -58,7 +58,7 @@ public class ResponseModelComparer(
         // Some endpoints (e.g. car/assets) return an object keyed by id rather than an array
         // (e.g. { "1": {...}, "2": {...} }). Detect that shape and compare against a
         // representative value instead of treating each key as a model property.
-        if (LooksLikeDictionaryOfObjects(json, modelProps))
+        if (LooksLikeIdKeyedDictionary(json))
         {
             foreach (var entry in json.EnumerateObject())
             {
@@ -96,24 +96,26 @@ public class ResponseModelComparer(
     }
 
     /// <summary>
-    /// Heuristic for detecting an object keyed by opaque ids (e.g. car/assets' { "1": {...}, "2": {...} }):
-    /// multiple sibling entries, all of which are objects, none of whose keys match a known model property.
+    /// Detects an object keyed by opaque ids (e.g. car/assets' { "1": {...}, "2": {...} }):
+    /// every entry's value is an object, and every key looks like an id (numeric or GUID),
+    /// never a model property name.
     /// </summary>
-    private static bool LooksLikeDictionaryOfObjects(JsonElement json, Dictionary<string, Type?> modelProps)
+    private static bool LooksLikeIdKeyedDictionary(JsonElement json)
     {
-        var entryCount = 0;
-        var allObjects = true;
-        var matchCount = 0;
+        var hasEntry = false;
 
         foreach (var prop in json.EnumerateObject())
         {
-            entryCount++;
-            if (prop.Value.ValueKind != JsonValueKind.Object) allObjects = false;
-            if (modelProps.ContainsKey(prop.Name)) matchCount++;
+            hasEntry = true;
+            if (prop.Value.ValueKind != JsonValueKind.Object) return false;
+            if (!IsIdLikeKey(prop.Name)) return false;
         }
 
-        return entryCount > 1 && allObjects && matchCount == 0;
+        return hasEntry;
     }
+
+    private static bool IsIdLikeKey(string key) =>
+        long.TryParse(key, out _) || Guid.TryParse(key, out _);
 
     private static readonly string[] DateTimeFormats =
     [
