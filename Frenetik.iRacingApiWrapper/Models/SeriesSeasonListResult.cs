@@ -77,6 +77,12 @@ public class SeriesSeasonListResult
         public bool ConnectionBlackFlag { get; set; }
 
         /// <summary>
+        /// Content Package Ids
+        /// </summary>
+        [JsonPropertyName("content_package_ids")]
+        public List<int> ContentPackageIds { get; set; } = [];
+
+        /// <summary>
         /// Consec Caution Within Nlaps
         /// </summary>
         [JsonPropertyName("consec_caution_within_nlaps")]
@@ -105,6 +111,12 @@ public class SeriesSeasonListResult
         /// </summary>
         [JsonPropertyName("distributed_matchmaking")]
         public bool DistributedMatchmaking { get; set; }
+
+        /// <summary>
+        /// Equalize Fuel Fill Times
+        /// </summary>
+        [JsonPropertyName("equalize_fuel_fill_times")]
+        public bool EqualizeFuelFillTimes { get; set; }
 
         /// <summary>
         /// Driver Change Rule
@@ -495,6 +507,12 @@ public class SeriesSeasonListResult
         /// </summary>
         [JsonPropertyName("category_id")]
         public int CategoryId { get; set; }
+
+        /// <summary>
+        /// Config Name
+        /// </summary>
+        [JsonPropertyName("config_name")]
+        public string ConfigName { get; set; } = string.Empty;
 
         /// <summary>
         /// Track Id

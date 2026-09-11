@@ -47,6 +47,18 @@ public class Car
     public bool AwardExempt { get; set; } = false;
 
     /// <summary>
+    /// Car Config Defs
+    /// </summary>
+    [JsonPropertyName("car_config_defs")]
+    public List<object> CarConfigDefs { get; set; } = new List<object>();
+
+    /// <summary>
+    /// Car Configs
+    /// </summary>
+    [JsonPropertyName("car_configs")]
+    public List<object> CarConfigs { get; set; } = new List<object>();
+
+    /// <summary>
     /// Car Directory Path
     /// </summary>
     [JsonPropertyName("car_dirpath")]
@@ -185,6 +197,12 @@ public class Car
     public double MinPowerAdjustPct { get; set; } = 0.0;
 
     /// <summary>
+    /// Min Weight Penalty in Kg
+    /// </summary>
+    [JsonPropertyName("min_weight_penalty_kg")]
+    public int MinWeightPenaltyKg { get; set; } = 0;
+
+    /// <summary>
     /// Content Package Id
     /// </summary>
     [JsonPropertyName("package_id")]
@@ -231,6 +249,12 @@ public class Car
     /// </summary>
     [JsonPropertyName("sku")]
     public int Sku { get; set; } = 0;
+
+    /// <summary>
+    /// Video Link
+    /// </summary>
+    [JsonPropertyName("video_link")]
+    public string? VideoLink { get; set; }
 
     /// <summary>
     /// Car type classification

@@ -138,10 +138,22 @@ public class MemberInfo
     public List<CarPackageInfo> CarPackages { get; set; } = new List<CarPackageInfo>();
 
     /// <summary>
+    /// Loaned Car Packages
+    /// </summary>
+    [JsonPropertyName("loaned_car_packages")]
+    public List<CarPackageInfo> LoanedCarPackages { get; set; } = new List<CarPackageInfo>();
+
+    /// <summary>
     /// Track Packages
     /// </summary>
     [JsonPropertyName("track_packages")]
     public List<TrackPackageInfo> TrackPackages { get; set; } = new List<TrackPackageInfo>();
+
+    /// <summary>
+    /// Loaned Track Packages
+    /// </summary>
+    [JsonPropertyName("loaned_track_packages")]
+    public List<TrackPackageInfo> LoanedTrackPackages { get; set; } = new List<TrackPackageInfo>();
 
     /// <summary>
     /// Other Owned Packages

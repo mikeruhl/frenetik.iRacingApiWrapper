@@ -55,6 +55,22 @@ public class ResponseModelComparer(
 
         var modelProps = extractor.GetJsonProperties(modelType);
 
+        // Some endpoints (e.g. car/assets) return an object keyed by id rather than an array
+        // (e.g. { "1": {...}, "2": {...} }). Detect that shape and compare against a
+        // representative value instead of treating each key as a model property.
+        if (LooksLikeIdKeyedDictionary(json))
+        {
+            foreach (var entry in json.EnumerateObject())
+            {
+                if (entry.Value.ValueKind == JsonValueKind.Object)
+                {
+                    CompareRecursive(entry.Value, modelType, path, missing, ref total, depth);
+                    break;
+                }
+            }
+            return;
+        }
+
         foreach (var jsonProp in json.EnumerateObject())
         {
             var propPath = string.IsNullOrEmpty(path) ? jsonProp.Name : $"{path}.{jsonProp.Name}";
@@ -78,6 +94,28 @@ public class ResponseModelComparer(
             }
         }
     }
+
+    /// <summary>
+    /// Detects an object keyed by opaque ids (e.g. car/assets' { "1": {...}, "2": {...} }):
+    /// every entry's value is an object, and every key looks like an id (numeric or GUID),
+    /// never a model property name.
+    /// </summary>
+    private static bool LooksLikeIdKeyedDictionary(JsonElement json)
+    {
+        var hasEntry = false;
+
+        foreach (var prop in json.EnumerateObject())
+        {
+            hasEntry = true;
+            if (prop.Value.ValueKind != JsonValueKind.Object) return false;
+            if (!IsIdLikeKey(prop.Name)) return false;
+        }
+
+        return hasEntry;
+    }
+
+    private static bool IsIdLikeKey(string key) =>
+        long.TryParse(key, out _) || Guid.TryParse(key, out _);
 
     private static readonly string[] DateTimeFormats =
     [

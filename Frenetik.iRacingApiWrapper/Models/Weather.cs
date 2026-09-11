@@ -210,10 +210,28 @@ public class WeatherSummary
     public string MaxPrecipRateDesc { get; set; } = string.Empty;
 
     /// <summary>
+    /// Max Precip Rate Before Session
+    /// </summary>
+    [JsonPropertyName("max_precip_rate_before_session")]
+    public int MaxPrecipRateBeforeSession { get; set; }
+
+    /// <summary>
+    /// Max Precip Rate Before Session Desc
+    /// </summary>
+    [JsonPropertyName("max_precip_rate_before_session_desc")]
+    public string MaxPrecipRateBeforeSessionDesc { get; set; } = string.Empty;
+
+    /// <summary>
     /// Precip Chance
     /// </summary>
     [JsonPropertyName("precip_chance")]
     public int PrecipChance { get; set; }
+
+    /// <summary>
+    /// Precip Chance Before Session
+    /// </summary>
+    [JsonPropertyName("precip_chance_before_session")]
+    public int PrecipChanceBeforeSession { get; set; }
 
     /// <summary>
     /// Skies High

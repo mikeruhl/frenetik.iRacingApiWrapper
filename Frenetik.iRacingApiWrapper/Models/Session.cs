@@ -78,6 +78,12 @@ public class Session
     public bool DriverChanges { get; set; }
 
     /// <summary>
+    /// Equalize Fuel Fill Times
+    /// </summary>
+    [JsonPropertyName("equalize_fuel_fill_times")]
+    public bool EqualizeFuelFillTimes { get; set; }
+
+    /// <summary>
     /// Restrict Viewing
     /// </summary>
     [JsonPropertyName("restrict_viewing")]
@@ -520,6 +526,12 @@ public class Session
     /// </summary>
     [JsonPropertyName("allowed_leagues")]
     public List<int> AllowedLeagues { get; set; } = new List<int>();
+
+    /// <summary>
+    /// Registered Teams
+    /// </summary>
+    [JsonPropertyName("registered_teams")]
+    public List<int> RegisteredTeams { get; set; } = new List<int>();
 
     /// <summary>
     /// Cars
@@ -1021,6 +1033,30 @@ public class Session
         /// </summary>
         [JsonPropertyName("package_id")]
         public int PackageId { get; set; }
+
+        /// <summary>
+        /// Qual Setup Id
+        /// </summary>
+        [JsonPropertyName("qual_setup_id")]
+        public int? QualSetupId { get; set; }
+
+        /// <summary>
+        /// Qual Setup Filename
+        /// </summary>
+        [JsonPropertyName("qual_setup_filename")]
+        public string? QualSetupFilename { get; set; }
+
+        /// <summary>
+        /// Race Setup Id
+        /// </summary>
+        [JsonPropertyName("race_setup_id")]
+        public int? RaceSetupId { get; set; }
+
+        /// <summary>
+        /// Race Setup Filename
+        /// </summary>
+        [JsonPropertyName("race_setup_filename")]
+        public string? RaceSetupFilename { get; set; }
     }
 
     /// <summary>
