@@ -55,6 +55,22 @@ public class ResponseModelComparer(
 
         var modelProps = extractor.GetJsonProperties(modelType);
 
+        // Some endpoints (e.g. car/assets) return an object keyed by id rather than an array
+        // (e.g. { "1": {...}, "2": {...} }). Detect that shape and compare against a
+        // representative value instead of treating each key as a model property.
+        if (LooksLikeDictionaryOfObjects(json, modelProps))
+        {
+            foreach (var entry in json.EnumerateObject())
+            {
+                if (entry.Value.ValueKind == JsonValueKind.Object)
+                {
+                    CompareRecursive(entry.Value, modelType, path, missing, ref total, depth);
+                    break;
+                }
+            }
+            return;
+        }
+
         foreach (var jsonProp in json.EnumerateObject())
         {
             var propPath = string.IsNullOrEmpty(path) ? jsonProp.Name : $"{path}.{jsonProp.Name}";
@@ -77,6 +93,26 @@ public class ResponseModelComparer(
                 CompareRecursive(jsonProp.Value, nestedType, propPath, missing, ref total, depth + 1);
             }
         }
+    }
+
+    /// <summary>
+    /// Heuristic for detecting an object keyed by opaque ids (e.g. car/assets' { "1": {...}, "2": {...} }):
+    /// multiple sibling entries, all of which are objects, none of whose keys match a known model property.
+    /// </summary>
+    private static bool LooksLikeDictionaryOfObjects(JsonElement json, Dictionary<string, Type?> modelProps)
+    {
+        var entryCount = 0;
+        var allObjects = true;
+        var matchCount = 0;
+
+        foreach (var prop in json.EnumerateObject())
+        {
+            entryCount++;
+            if (prop.Value.ValueKind != JsonValueKind.Object) allObjects = false;
+            if (modelProps.ContainsKey(prop.Name)) matchCount++;
+        }
+
+        return entryCount > 1 && allObjects && matchCount == 0;
     }
 
     private static readonly string[] DateTimeFormats =

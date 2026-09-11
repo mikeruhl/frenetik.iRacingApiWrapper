@@ -42,6 +42,18 @@ namespace Frenetik.iRacingApiWrapper.Models
         public bool CarSwitching { get; set; }
 
         /// <summary>
+        /// Content Package Ids
+        /// </summary>
+        [JsonPropertyName("content_package_ids")]
+        public List<int> ContentPackageIds { get; set; } = new();
+
+        /// <summary>
+        /// Equalize Fuel Fill Times
+        /// </summary>
+        [JsonPropertyName("equalize_fuel_fill_times")]
+        public bool EqualizeFuelFillTimes { get; set; }
+
+        /// <summary>
         /// Car Types
         /// </summary>
         [JsonPropertyName("car_types")]
@@ -383,6 +395,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("short_parade_lap")]
         public bool ShortParadeLap { get; set; }
+
+        /// <summary>
+        /// Skip Irating Exchanges
+        /// </summary>
+        [JsonPropertyName("skipi_rating_exchanges")]
+        public bool SkipIRatingExchanges { get; set; }
 
         /// <summary>
         /// Start Date
@@ -728,6 +746,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         public int Fog { get; set; }
 
         /// <summary>
+        /// Forecast Gen Option
+        /// </summary>
+        [JsonPropertyName("forecast_gen_option")]
+        public int ForecastGenOption { get; set; }
+
+        /// <summary>
         /// Forecast Options
         /// </summary>
         [JsonPropertyName("forecast_options")]
@@ -876,6 +900,18 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("precipitation")]
         public int Precipitation { get; set; }
+
+        /// <summary>
+        /// Rain High
+        /// </summary>
+        [JsonPropertyName("rain_high")]
+        public int RainHigh { get; set; }
+
+        /// <summary>
+        /// Rain Low
+        /// </summary>
+        [JsonPropertyName("rain_low")]
+        public int RainLow { get; set; }
 
         /// <summary>
         /// Skies

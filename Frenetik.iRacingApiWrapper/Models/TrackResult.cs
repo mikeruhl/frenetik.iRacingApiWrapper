@@ -358,6 +358,12 @@ public class TrackResult
     /// </summary>
     [JsonPropertyName("track_types")]
     public List<TrackType> TrackTypes { get; set; } = new List<TrackType>();
+
+    /// <summary>
+    /// Video Link
+    /// </summary>
+    [JsonPropertyName("video_link")]
+    public string? VideoLink { get; set; }
 }
 
 /// <summary>

@@ -66,6 +66,12 @@ public class SeriesResult
     public int RoadCautionType { get; set; }
 
     /// <summary>
+    /// Search Filters
+    /// </summary>
+    [JsonPropertyName("search_filters")]
+    public string SearchFilters { get; set; } = string.Empty;
+
+    /// <summary>
     /// Series Id
     /// </summary>
     [JsonPropertyName("series_id")]

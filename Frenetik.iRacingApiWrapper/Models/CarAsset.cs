@@ -13,6 +13,12 @@ public class CarAsset
     public int CarId { get; set; }
 
     /// <summary>
+    /// Car Manual Link
+    /// </summary>
+    [JsonPropertyName("car_manual_link")]
+    public string? CarManualLink { get; set; }
+
+    /// <summary>
     /// Car Rules
     /// </summary>
     [JsonPropertyName("car_rules")]
@@ -33,7 +39,7 @@ public class CarAsset
     /// <summary>
     /// Detail Tech Specs Copy (HTML)
     /// </summary>
-    [JsonPropertyName("detail_tech_specs_copy")]
+    [JsonPropertyName("detail_techspecs_copy")]
     public string DetailTechSpecsCopy { get; set; } = string.Empty;
 
     /// <summary>
@@ -77,6 +83,12 @@ public class CarAsset
     /// </summary>
     [JsonPropertyName("logo")]
     public string Logo { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Slug
+    /// </summary>
+    [JsonPropertyName("slug")]
+    public string? Slug { get; set; }
 
     /// <summary>
     /// Small Image
