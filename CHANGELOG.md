@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.3]
+
+- Fixed `SeriesSeasonSchedule.RaceWeekCarClasses` (from `GetSeriesSeasonSchedule`) deserializing as
+  `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]` — the only per-week
+  car data this endpoint carries (it has no `race_week_cars` field; unlike `GetSeriesSeasons`, cars are
+  nested under each car class rather than listed flat). Added `SeriesSeasonScheduleCarClass` and
+  `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and each class's `car_id`/`car_name`/
+  `car_name_abbreviated`. The `ApiCoverageAnalyzer` couldn't catch this one live: `series/season_schedule`
+  needs a `season_id` sample value it doesn't have configured, so the endpoint was never actually probed.
+
 ## [5.0.2]
 
 - Added response model properties found missing by API Coverage Analyzer:
