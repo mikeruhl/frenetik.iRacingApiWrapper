@@ -135,7 +135,7 @@ public class SeriesSeasonSchedule
     /// Race Week Car Classes
     /// </summary>
     [JsonPropertyName("race_week_car_classes")]
-    public List<object> RaceWeekCarClasses { get; set; } = [];
+    public List<SeriesSeasonScheduleCarClass> RaceWeekCarClasses { get; set; } = [];
 
     /// <summary>
     /// Restart Type
@@ -226,6 +226,48 @@ public class SeriesSeasonSchedule
     /// </summary>
     [JsonPropertyName("week_end_time")]
     public string WeekEndTime { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Series Season Schedule Car Class
+/// </summary>
+public class SeriesSeasonScheduleCarClass
+{
+    /// <summary>
+    /// Car Class Id
+    /// </summary>
+    [JsonPropertyName("car_class_id")]
+    public int CarClassId { get; set; }
+
+    /// <summary>
+    /// Cars In Class
+    /// </summary>
+    [JsonPropertyName("cars_in_class")]
+    public List<SeriesSeasonScheduleCarClassCar> CarsInClass { get; set; } = [];
+}
+
+/// <summary>
+/// Series Season Schedule Car Class Car
+/// </summary>
+public class SeriesSeasonScheduleCarClassCar
+{
+    /// <summary>
+    /// Car Id
+    /// </summary>
+    [JsonPropertyName("car_id")]
+    public int CarId { get; set; }
+
+    /// <summary>
+    /// Car Name
+    /// </summary>
+    [JsonPropertyName("car_name")]
+    public string CarName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Car Name Abbreviated
+    /// </summary>
+    [JsonPropertyName("car_name_abbreviated")]
+    public string CarNameAbbreviated { get; set; } = string.Empty;
 }
 
 /// <summary>
