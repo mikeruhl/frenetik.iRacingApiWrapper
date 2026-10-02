@@ -7,13 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.2.0]
 
+### Breaking Changes
+- `SeriesSeasonSchedule.CarRestrictions` changes from `List<object>` to
+  `List<SeriesSeasonScheduleCarRestriction>`, and `SeriesSeasonSchedule.QualTimeDescriptors` changes
+  from `List<object>` to `List<SeriesSeasonScheduleRaceTimeDescriptor>`. Both are source- and
+  binary-incompatible with code that assigns, reads, or references the old `List<object>` member type.
+  These ship under 5.2.0 for now; the next dedicated version-bump commit should bump the major version
+  instead, per this project's Semantic Versioning policy.
+
+### Added
+- Added `IIRacingApiService.GetRawApiResponse(path, followLink, parameters)` for retrieving the raw
+  JSON response of any `/data/*` endpoint, including ones with no strongly typed model yet, with
+  optional link-following and query parameters. Implemented as a default interface member, so existing
+  external implementations of `IIRacingApiService` are unaffected and do not need to add this method.
+- Added strongly typed coverage for additional `SeriesSeasonSchedule` fields: schedule descriptors,
+  car restrictions (`SeriesSeasonScheduleCarRestriction`), timing, car, and weather details that were
+  previously undeserialized.
+
+### Fixed
 - Fixed `SeriesSeasonSchedule.RaceWeekCarClasses` (from `GetSeriesSeasonSchedule`) deserializing as
-  `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]` — the only per-week
-  car data this endpoint carries (it has no `race_week_cars` field; unlike `GetSeriesSeasons`, cars are
-  nested under each car class rather than listed flat). Added `SeriesSeasonScheduleCarClass` and
-  `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and each class's `car_id`/`car_name`/
-  `car_name_abbreviated`. The `ApiCoverageAnalyzer` couldn't catch this one live: `series/season_schedule`
-  needs a `season_id` sample value it doesn't have configured, so the endpoint was never actually probed.
+  `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]`. Added
+  `SeriesSeasonScheduleCarClass` and `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and
+  each class's `car_id`/`car_name`/`car_name_abbreviated`. (A later pass sampling 144 live seasons found
+  `race_week_car_classes` empty on every observed response; `race_week_cars` is the field that actually
+  carries per-week car data for a week whose cars vary within a fixed-class season.) The
+  `ApiCoverageAnalyzer` couldn't catch this one live:
+  `series/season_schedule` needs a `season_id` sample value it doesn't have configured, so the endpoint
+  was never actually probed.
 
 ## [5.0.2]
 

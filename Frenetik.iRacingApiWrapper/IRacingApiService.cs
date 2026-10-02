@@ -53,6 +53,21 @@ public class IRacingApiService : IIRacingApiService
     public Task<Dictionary<string, Dictionary<string, EndpointDetails>>> GetDoc() => GetResources<Dictionary<string, Dictionary<string, EndpointDetails>>>("/doc", false);
 
     /// <inheritdoc />
+    public async Task<string> GetRawApiResponse(string path, bool followLink = false, IEnumerable<KeyValuePair<string, string>>? parameters = null)
+    {
+        var materializedParameters = parameters?.ToList();
+        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), materializedParameters);
+
+        if (followLink)
+        {
+            var link = await GetFromApi<ResourceLink>(url);
+            url = link.Link;
+        }
+
+        return await GetStringFromApi(url);
+    }
+
+    /// <inheritdoc />
     public Task<IEnumerable<Constant>> GetConstantsCategories() => GetResources<IEnumerable<Constant>>("/constants/categories", false);
 
     /// <inheritdoc />
@@ -453,6 +468,12 @@ public class IRacingApiService : IIRacingApiService
         }
 
         return result!;
+    }
+
+    private async Task<string> GetStringFromApi(string url)
+    {
+        using var response = await ExecuteApiRequest(url);
+        return await response.Content.ReadAsStringAsync();
     }
 
     private async Task<Stream> GetStreamFromApi(string url)

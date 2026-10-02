@@ -521,6 +521,120 @@ public class IRacingApiServiceTests
         Assert.Equal(10000, lineCount);
     }
 
+    [Fact]
+    public async Task GetRawApiResponse_WithFollowLinkFalse_ReturnsRawBodyDirectly()
+    {
+        // Arrange
+        const string rawBody = "{\"cust_id\":123,\"display_name\":\"Test Driver\"}";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        HttpRequestMessage? capturedRequest = null;
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(rawBody)
+            });
+
+        // Act
+        var result = await service.GetRawApiResponse("/member/info");
+
+        // Assert
+        Assert.Equal(rawBody, result);
+        Assert.NotNull(capturedRequest);
+        Assert.Equal("https://members-ng.iracing.com/data/member/info", capturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetRawApiResponse_BuildsUrlWithDataPrefixAndQueryParameters()
+    {
+        // Arrange
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        HttpRequestMessage? capturedRequest = null;
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{}")
+            });
+
+        var parameters = new List<KeyValuePair<string, string>>
+        {
+            new("cust_id", "123"),
+            new("include_licenses", "true"),
+        };
+
+        // Act
+        await service.GetRawApiResponse("/member/get", false, parameters);
+
+        // Assert - path gets the "/data" prefix exactly once, and query parameters are appended
+        Assert.NotNull(capturedRequest);
+        Assert.Equal(
+            "https://members-ng.iracing.com/data/member/get?cust_id=123&include_licenses=true",
+            capturedRequest!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task GetRawApiResponse_WithFollowLinkTrue_MakesTwoRequestsAndReturnsFinalBody()
+    {
+        // Arrange
+        const string finalBody = "{\"actual\":\"data\"}";
+        var settings = Options.Create(new IRacingDataSettings());
+        var service = new IRacingApiService(_httpClientFactoryMock.Object, settings, _loggerMock.Object);
+
+        var requestCount = 0;
+        var capturedRequests = new List<HttpRequestMessage>();
+        _httpMessageHandlerMock
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequests.Add(req))
+            .ReturnsAsync(() =>
+            {
+                requestCount++;
+                if (requestCount == 1)
+                {
+                    var linkResponse = JsonSerializer.Serialize(new { link = "https://example.com/actual-data.json" });
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(linkResponse)
+                    };
+                }
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(finalBody)
+                };
+            });
+
+        // Act
+        var result = await service.GetRawApiResponse("/test/path", true);
+
+        // Assert
+        Assert.Equal(finalBody, result);
+        Assert.Equal(2, capturedRequests.Count);
+        Assert.Equal("https://members-ng.iracing.com/data/test/path", capturedRequests[0].RequestUri!.ToString());
+        Assert.Equal("https://example.com/actual-data.json", capturedRequests[1].RequestUri!.ToString());
+    }
+
     private class TestAssetResponse
     {
         public int Id { get; set; }

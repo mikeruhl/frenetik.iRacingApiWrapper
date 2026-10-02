@@ -126,6 +126,25 @@ public interface IIRacingApiService
     /// <returns></returns>
     Task<Dictionary<string, Dictionary<string, EndpointDetails>>> GetDoc();
 
+    /// <summary>
+    /// Get raw JSON response body for endpoint not (yet) wrapped by typed method
+    /// </summary>
+    /// <param name="path">
+    /// API path relative to the data API root, not the configured base URL - the `/data` prefix is
+    /// added automatically. Do not include a leading "/data" segment, e.g. pass "/member/info" (which
+    /// resolves to "{baseUrl}/data/member/info"), not "/data/member/info".
+    /// </param>
+    /// <param name="followLink">If true, follows the returned link (S3 download URL) to fetch the final response</param>
+    /// <param name="parameters">Optional query parameters</param>
+    /// <returns>Raw response body as string</returns>
+    /// <remarks>
+    /// Implemented as a default interface member so existing external implementations of
+    /// <see cref="IIRacingApiService"/> keep compiling without adding this method. Types that don't
+    /// override it get this fallback, which throws at call time instead of failing to build.
+    /// </remarks>
+    Task<string> GetRawApiResponse(string path, bool followLink = false, IEnumerable<KeyValuePair<string, string>>? parameters = null) =>
+        throw new NotSupportedException($"{nameof(GetRawApiResponse)} is not implemented by this {nameof(IIRacingApiService)} implementation.");
+
 
     /// <summary>
     /// Get hosted combined session by package id
