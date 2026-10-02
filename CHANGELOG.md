@@ -5,15 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [5.2.0]
+## [6.0.0]
 
 ### Breaking Changes
 - `SeriesSeasonSchedule.CarRestrictions` changes from `List<object>` to
   `List<SeriesSeasonScheduleCarRestriction>`, and `SeriesSeasonSchedule.QualTimeDescriptors` changes
   from `List<object>` to `List<SeriesSeasonScheduleRaceTimeDescriptor>`. Both are source- and
   binary-incompatible with code that assigns, reads, or references the old `List<object>` member type.
-  These ship under 5.2.0 for now; the next dedicated version-bump commit should bump the major version
-  instead, per this project's Semantic Versioning policy.
 
 ### Added
 - Added `IIRacingApiService.GetRawApiResponse(path, followLink, parameters)` for retrieving the raw
