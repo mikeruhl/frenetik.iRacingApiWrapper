@@ -7,12 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.2.0]
 
+### Breaking Changes
+- `SeriesSeasonSchedule.CarRestrictions` changes from `List<object>` to
+  `List<SeriesSeasonScheduleCarRestriction>`, and `SeriesSeasonSchedule.QualTimeDescriptors` changes
+  from `List<object>` to `List<SeriesSeasonScheduleRaceTimeDescriptor>`. Both are source- and
+  binary-incompatible with code that assigns, reads, or references the old `List<object>` member type.
+  These ship under 5.2.0 for now; the next dedicated version-bump commit should bump the major version
+  instead, per this project's Semantic Versioning policy.
+
+### Added
 - Added `IIRacingApiService.GetRawApiResponse(path, followLink, parameters)` for retrieving the raw
   JSON response of any `/data/*` endpoint, including ones with no strongly typed model yet, with
-  optional link-following and query parameters.
+  optional link-following and query parameters. Implemented as a default interface member, so existing
+  external implementations of `IIRacingApiService` are unaffected and do not need to add this method.
 - Added strongly typed coverage for additional `SeriesSeasonSchedule` fields: schedule descriptors,
   car restrictions (`SeriesSeasonScheduleCarRestriction`), timing, car, and weather details that were
   previously undeserialized.
+
+### Fixed
 - Fixed `SeriesSeasonSchedule.RaceWeekCarClasses` (from `GetSeriesSeasonSchedule`) deserializing as
   `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]`. Added
   `SeriesSeasonScheduleCarClass` and `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and
