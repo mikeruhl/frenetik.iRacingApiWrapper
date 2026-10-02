@@ -129,7 +129,11 @@ public interface IIRacingApiService
     /// <summary>
     /// Get raw JSON response body for endpoint not (yet) wrapped by typed method
     /// </summary>
-    /// <param name="path">API path relative to base URL, e.g. "/member/info"</param>
+    /// <param name="path">
+    /// API path relative to the data API root, not the configured base URL - the `/data` prefix is
+    /// added automatically. Do not include a leading "/data" segment, e.g. pass "/member/info" (which
+    /// resolves to "{baseUrl}/data/member/info"), not "/data/member/info".
+    /// </param>
     /// <param name="followLink">If true, follows the returned link (S3 download URL) to fetch the final response</param>
     /// <param name="parameters">Optional query parameters</param>
     /// <returns>Raw response body as string</returns>

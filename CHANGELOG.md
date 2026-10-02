@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [5.2.0]
 
 - Fixed `SeriesSeasonSchedule.RaceWeekCarClasses` (from `GetSeriesSeasonSchedule`) deserializing as
-  `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]` — the only per-week
-  car data this endpoint carries (it has no `race_week_cars` field; unlike `GetSeriesSeasons`, cars are
-  nested under each car class rather than listed flat). Added `SeriesSeasonScheduleCarClass` and
-  `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and each class's `car_id`/`car_name`/
-  `car_name_abbreviated`. The `ApiCoverageAnalyzer` couldn't catch this one live: `series/season_schedule`
-  needs a `season_id` sample value it doesn't have configured, so the endpoint was never actually probed.
+  `List<object>`, silently discarding `race_week_car_classes[].cars_in_class[]`. Added
+  `SeriesSeasonScheduleCarClass` and `SeriesSeasonScheduleCarClassCar` to capture `car_class_id` and
+  each class's `car_id`/`car_name`/`car_name_abbreviated`. (A later pass sampling 144 live seasons found
+  `race_week_car_classes` empty on every observed response; `race_week_cars` is the field that actually
+  carries per-week car data for a week whose cars vary within a fixed-class season.) The
+  `ApiCoverageAnalyzer` couldn't catch this one live:
+  `series/season_schedule` needs a `season_id` sample value it doesn't have configured, so the endpoint
+  was never actually probed.
 
 ## [5.0.2]
 

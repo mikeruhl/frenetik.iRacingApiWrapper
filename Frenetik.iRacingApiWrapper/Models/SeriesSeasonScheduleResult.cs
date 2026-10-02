@@ -305,7 +305,7 @@ public class SeriesSeasonScheduleCarRestriction
     /// Max Pct Fuel Fill
     /// </summary>
     [JsonPropertyName("max_pct_fuel_fill")]
-    public int MaxPctFuelFill { get; set; }
+    public float MaxPctFuelFill { get; set; }
 
     /// <summary>
     /// Power Adjust Pct
@@ -329,7 +329,7 @@ public class SeriesSeasonScheduleCarRestriction
     /// Weight Penalty Kg
     /// </summary>
     [JsonPropertyName("weight_penalty_kg")]
-    public int WeightPenaltyKg { get; set; }
+    public float WeightPenaltyKg { get; set; }
 }
 
 /// <summary>
