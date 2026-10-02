@@ -55,7 +55,8 @@ public class IRacingApiService : IIRacingApiService
     /// <inheritdoc />
     public async Task<string> GetRawApiResponse(string path, bool followLink = false, IEnumerable<KeyValuePair<string, string>>? parameters = null)
     {
-        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), parameters);
+        var materializedParameters = parameters?.ToList();
+        var url = BuildUrl(_settings.BaseUrl, GetCombinedPath(path), materializedParameters);
 
         if (followLink)
         {

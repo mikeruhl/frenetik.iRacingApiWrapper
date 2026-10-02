@@ -317,13 +317,13 @@ public class SeriesSeasonScheduleCarRestriction
     /// Qual Setup Id
     /// </summary>
     [JsonPropertyName("qual_setup_id")]
-    public int QualSetupId { get; set; }
+    public int? QualSetupId { get; set; }
 
     /// <summary>
     /// Race Setup Id
     /// </summary>
     [JsonPropertyName("race_setup_id")]
-    public int RaceSetupId { get; set; }
+    public int? RaceSetupId { get; set; }
 
     /// <summary>
     /// Weight Penalty Kg
