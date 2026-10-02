@@ -126,6 +126,15 @@ public interface IIRacingApiService
     /// <returns></returns>
     Task<Dictionary<string, Dictionary<string, EndpointDetails>>> GetDoc();
 
+    /// <summary>
+    /// Get raw JSON response body for endpoint not (yet) wrapped by typed method
+    /// </summary>
+    /// <param name="path">API path relative to base URL, e.g. "/member/info"</param>
+    /// <param name="followLink">If true, follows the returned link (S3 download URL) to fetch the final response</param>
+    /// <param name="parameters">Optional query parameters</param>
+    /// <returns>Raw response body as string</returns>
+    Task<string> GetRawApiResponse(string path, bool followLink = false, IEnumerable<KeyValuePair<string, string>>? parameters = null);
+
 
     /// <summary>
     /// Get hosted combined session by package id
