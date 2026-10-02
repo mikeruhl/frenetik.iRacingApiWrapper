@@ -45,7 +45,7 @@ public class SeriesSeasonSchedule
     /// Car Restrictions
     /// </summary>
     [JsonPropertyName("car_restrictions")]
-    public List<object> CarRestrictions { get; set; } = [];
+    public List<SeriesSeasonScheduleCarRestriction> CarRestrictions { get; set; } = [];
 
     /// <summary>
     /// Category
@@ -99,7 +99,7 @@ public class SeriesSeasonSchedule
     /// Qual Time Descriptors
     /// </summary>
     [JsonPropertyName("qual_time_descriptors")]
-    public List<object> QualTimeDescriptors { get; set; } = [];
+    public List<SeriesSeasonScheduleRaceTimeDescriptor> QualTimeDescriptors { get; set; } = [];
 
     /// <summary>
     /// Qualify Laps
@@ -132,10 +132,24 @@ public class SeriesSeasonSchedule
     public int? RaceTimeLimit { get; set; }
 
     /// <summary>
+    /// Race Week Car Class Ids
+    /// </summary>
+    [JsonPropertyName("race_week_car_class_ids")]
+    public List<int> RaceWeekCarClassIds { get; set; } = [];
+
+    /// <summary>
     /// Race Week Car Classes
     /// </summary>
     [JsonPropertyName("race_week_car_classes")]
     public List<SeriesSeasonScheduleCarClass> RaceWeekCarClasses { get; set; } = [];
+
+    /// <summary>
+    /// Race Week Cars - populated instead of <see cref="RaceWeekCarClasses"/> for a week whose cars
+    /// vary within a fixed-class season (RaceWeekCarClasses has been observed always empty on this
+    /// endpoint; this is the field that actually carries per-week car data).
+    /// </summary>
+    [JsonPropertyName("race_week_cars")]
+    public List<SeriesSeasonScheduleCarClassCar> RaceWeekCars { get; set; } = [];
 
     /// <summary>
     /// Restart Type
@@ -271,6 +285,54 @@ public class SeriesSeasonScheduleCarClassCar
 }
 
 /// <summary>
+/// Series Season Schedule Car Restriction
+/// </summary>
+public class SeriesSeasonScheduleCarRestriction
+{
+    /// <summary>
+    /// Car Id
+    /// </summary>
+    [JsonPropertyName("car_id")]
+    public int CarId { get; set; }
+
+    /// <summary>
+    /// Max Dry Tire Sets
+    /// </summary>
+    [JsonPropertyName("max_dry_tire_sets")]
+    public int MaxDryTireSets { get; set; }
+
+    /// <summary>
+    /// Max Pct Fuel Fill
+    /// </summary>
+    [JsonPropertyName("max_pct_fuel_fill")]
+    public int MaxPctFuelFill { get; set; }
+
+    /// <summary>
+    /// Power Adjust Pct
+    /// </summary>
+    [JsonPropertyName("power_adjust_pct")]
+    public float PowerAdjustPct { get; set; }
+
+    /// <summary>
+    /// Qual Setup Id
+    /// </summary>
+    [JsonPropertyName("qual_setup_id")]
+    public int QualSetupId { get; set; }
+
+    /// <summary>
+    /// Race Setup Id
+    /// </summary>
+    [JsonPropertyName("race_setup_id")]
+    public int RaceSetupId { get; set; }
+
+    /// <summary>
+    /// Weight Penalty Kg
+    /// </summary>
+    [JsonPropertyName("weight_penalty_kg")]
+    public int WeightPenaltyKg { get; set; }
+}
+
+/// <summary>
 /// Series Season Schedule Event Options
 /// </summary>
 public class SeriesSeasonScheduleEventOptions
@@ -378,37 +440,61 @@ public class SeriesSeasonScheduleEventSession
 public class SeriesSeasonScheduleRaceTimeDescriptor
 {
     /// <summary>
-    /// Day Offset
+    /// Day Offset - days (0 = <see cref="StartDate"/>) this descriptor's sessions run on.
+    /// Only present when <see cref="Repeating"/> is true.
     /// </summary>
     [JsonPropertyName("day_offset")]
     public List<int> DayOffset { get; set; } = [];
 
     /// <summary>
-    /// First Session Time
+    /// End Offset Minutes - last minute-of-day (from UTC midnight) a session may start on.
+    /// Only present when <see cref="Repeating"/> is true.
+    /// </summary>
+    [JsonPropertyName("end_offset_minutes")]
+    public int? EndOffsetMinutes { get; set; }
+
+    /// <summary>
+    /// First Session Time - UTC time-of-day ("HH:mm:ss") the first session of each
+    /// <see cref="DayOffset"/> day starts at. Only present when <see cref="Repeating"/> is true.
     /// </summary>
     [JsonPropertyName("first_session_time")]
     public string FirstSessionTime { get; set; } = string.Empty;
 
     /// <summary>
-    /// Repeat Minutes
+    /// Repeat Minutes - interval between consecutive session starts on the same day.
+    /// Only present when <see cref="Repeating"/> is true.
     /// </summary>
     [JsonPropertyName("repeat_minutes")]
     public int RepeatMinutes { get; set; }
 
     /// <summary>
-    /// Repeating
+    /// Repeating - true for an ordinary recurring-session week (decode via <see cref="DayOffset"/>,
+    /// <see cref="FirstSessionTime"/>, <see cref="RepeatMinutes"/>, <see cref="EndOffsetMinutes"/>,
+    /// <see cref="StartDate"/>); false for a one-off special event, whose exact UTC start times are
+    /// listed directly in <see cref="SessionTimes"/> instead.
     /// </summary>
     [JsonPropertyName("repeating")]
     public bool Repeating { get; set; }
 
     /// <summary>
-    /// Session Minutes
+    /// Session Minutes - session duration when <see cref="Repeating"/> is true. When false, this is
+    /// not a per-session duration (observed values span the whole special event) - use
+    /// <see cref="SessionTimes"/> directly instead.
     /// </summary>
     [JsonPropertyName("session_minutes")]
     public int SessionMinutes { get; set; }
 
     /// <summary>
-    /// Start Date
+    /// Session Times - explicit UTC session start timestamps (ISO 8601). Only present when
+    /// <see cref="Repeating"/> is false. Left as raw strings, matching <see cref="StartDate"/> and
+    /// <see cref="SeriesSeasonSchedule.WeekEndTime"/> elsewhere in this model - callers parse.
+    /// </summary>
+    [JsonPropertyName("session_times")]
+    public List<string> SessionTimes { get; set; } = [];
+
+    /// <summary>
+    /// Start Date - date (UTC, "yyyy-MM-dd") <see cref="DayOffset"/> is relative to.
+    /// Only present when <see cref="Repeating"/> is true.
     /// </summary>
     [JsonPropertyName("start_date")]
     public string StartDate { get; set; } = string.Empty;
@@ -486,6 +572,12 @@ public class SeriesSeasonScheduleWeather
     public bool AllowFog { get; set; }
 
     /// <summary>
+    /// Fog
+    /// </summary>
+    [JsonPropertyName("fog")]
+    public int Fog { get; set; }
+
+    /// <summary>
     /// Forecast Options
     /// </summary>
     [JsonPropertyName("forecast_options")]
@@ -552,6 +644,12 @@ public class SeriesSeasonScheduleWeather
     public int TrackWater { get; set; }
 
     /// <summary>
+    /// Type
+    /// </summary>
+    [JsonPropertyName("type")]
+    public int Type { get; set; }
+
+    /// <summary>
     /// Version
     /// </summary>
     [JsonPropertyName("version")]
@@ -562,6 +660,18 @@ public class SeriesSeasonScheduleWeather
     /// </summary>
     [JsonPropertyName("weather_summary")]
     public SeriesSeasonScheduleWeatherSummary WeatherSummary { get; set; } = new();
+
+    /// <summary>
+    /// Weather Var Initial
+    /// </summary>
+    [JsonPropertyName("weather_var_initial")]
+    public int WeatherVarInitial { get; set; }
+
+    /// <summary>
+    /// Weather Var Ongoing
+    /// </summary>
+    [JsonPropertyName("weather_var_ongoing")]
+    public int WeatherVarOngoing { get; set; }
 
     /// <summary>
     /// Wind Dir
@@ -604,6 +714,18 @@ public class SeriesSeasonScheduleForecastOptions
     /// </summary>
     [JsonPropertyName("precipitation")]
     public int Precipitation { get; set; }
+
+    /// <summary>
+    /// Rain High
+    /// </summary>
+    [JsonPropertyName("rain_high")]
+    public int RainHigh { get; set; }
+
+    /// <summary>
+    /// Rain Low
+    /// </summary>
+    [JsonPropertyName("rain_low")]
+    public int RainLow { get; set; }
 
     /// <summary>
     /// Skies
@@ -654,6 +776,18 @@ public class SeriesSeasonScheduleWeatherSummary
     public float MaxPrecipitationRate { get; set; }
 
     /// <summary>
+    /// Max Precip Rate Before Session
+    /// </summary>
+    [JsonPropertyName("max_precip_rate_before_session")]
+    public float MaxPrecipitationRateBeforeSession { get; set; }
+
+    /// <summary>
+    /// Max Precip Rate Before Session Desc
+    /// </summary>
+    [JsonPropertyName("max_precip_rate_before_session_desc")]
+    public string MaxPrecipitationRateBeforeSessionDescription { get; set; } = string.Empty;
+
+    /// <summary>
     /// Max Precip Rate Desc
     /// </summary>
     [JsonPropertyName("max_precip_rate_desc")]
@@ -664,6 +798,12 @@ public class SeriesSeasonScheduleWeatherSummary
     /// </summary>
     [JsonPropertyName("precip_chance")]
     public float PrecipitationChance { get; set; }
+
+    /// <summary>
+    /// Precip Chance Before Session
+    /// </summary>
+    [JsonPropertyName("precip_chance_before_session")]
+    public float PrecipitationChanceBeforeSession { get; set; }
 
     /// <summary>
     /// Skies High
