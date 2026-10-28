@@ -324,6 +324,42 @@ public class SubSessionResults
     public List<int> AssociatedSubsessionIds { get; set; } = new List<int>();
 
     /// <summary>
+    /// Event Best Lap Time
+    /// </summary>
+    [JsonPropertyName("event_best_lap_time")]
+    public int EventBestLapTime { get; set; }
+
+    /// <summary>
+    /// Num Drivers
+    /// </summary>
+    [JsonPropertyName("num_drivers")]
+    public int NumDrivers { get; set; }
+
+    /// <summary>
+    /// Session Splits
+    /// </summary>
+    [JsonPropertyName("session_splits")]
+    public List<SessionSplit> SessionSplits { get; set; } = new List<SessionSplit>();
+
+    /// <summary>
+    /// SessionSplit
+    /// </summary>
+    public class SessionSplit
+    {
+        /// <summary>
+        /// Subsession Id
+        /// </summary>
+        [JsonPropertyName("subsession_id")]
+        public int SubsessionId { get; set; }
+
+        /// <summary>
+        /// Event Strength Of Field
+        /// </summary>
+        [JsonPropertyName("event_strength_of_field")]
+        public int EventStrengthOfField { get; set; }
+    }
+
+    /// <summary>
     /// TrackResult
     /// </summary>
     public class TrackResult
@@ -471,6 +507,30 @@ public class SubSessionResults
         /// </summary>
         [JsonPropertyName("simulated_start_utc_offset")]
         public int SimulatedStartUtcOffset { get; set; }
+
+        /// <summary>
+        /// Precip Mm2hr Before Final Session
+        /// </summary>
+        [JsonPropertyName("precip_mm2hr_before_final_session")]
+        public int PrecipMm2hrBeforeFinalSession { get; set; }
+
+        /// <summary>
+        /// Precip Mm Final Session
+        /// </summary>
+        [JsonPropertyName("precip_mm_final_session")]
+        public int PrecipMmFinalSession { get; set; }
+
+        /// <summary>
+        /// Precip Time Pct
+        /// </summary>
+        [JsonPropertyName("precip_time_pct")]
+        public int PrecipTimePct { get; set; }
+
+        /// <summary>
+        /// Simulated Start Time
+        /// </summary>
+        [JsonPropertyName("simulated_start_time")]
+        public DateTime SimulatedStartTime { get; set; }
     }
 
     /// <summary>
@@ -980,6 +1040,18 @@ public class SubSessionResults
         /// </summary>
         [JsonPropertyName("aggregate_champ_points")]
         public int AggregateChampionshipPoints { get; set; }
+
+        /// <summary>
+        /// Carcfg
+        /// </summary>
+        [JsonPropertyName("carcfg")]
+        public int CarCfg { get; set; }
+
+        /// <summary>
+        /// Country Code
+        /// </summary>
+        [JsonPropertyName("country_code")]
+        public string CountryCode { get; set; } = string.Empty;
 
         /// <summary>
         /// Livery

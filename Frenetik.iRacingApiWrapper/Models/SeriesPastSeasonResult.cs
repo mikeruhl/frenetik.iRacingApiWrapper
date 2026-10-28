@@ -105,6 +105,36 @@ public class SeriesPastSeasonSeries
     /// </summary>
     [JsonPropertyName("seasons")]
     public List<SeriesPastSeason> Seasons { get; set; } = new List<SeriesPastSeason>();
+
+    /// <summary>
+    /// Series Copy
+    /// </summary>
+    [JsonPropertyName("series_copy")]
+    public string SeriesCopy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// First Season
+    /// </summary>
+    [JsonPropertyName("first_season")]
+    public SeriesPastSeasonFirstSeason FirstSeason { get; set; } = new SeriesPastSeasonFirstSeason();
+}
+
+/// <summary>
+/// SeriesPastSeasonFirstSeason
+/// </summary>
+public class SeriesPastSeasonFirstSeason
+{
+    /// <summary>
+    /// Season Year
+    /// </summary>
+    [JsonPropertyName("season_year")]
+    public int SeasonYear { get; set; }
+
+    /// <summary>
+    /// Season Quarter
+    /// </summary>
+    [JsonPropertyName("season_quarter")]
+    public int SeasonQuarter { get; set; }
 }
 
 /// <summary>
@@ -201,6 +231,12 @@ public class SeriesPastSeason
     /// </summary>
     [JsonPropertyName("driver_changes")]
     public bool DriverChanges { get; set; }
+
+    /// <summary>
+    /// Car Switching
+    /// </summary>
+    [JsonPropertyName("car_switching")]
+    public bool CarSwitching { get; set; }
 
     /// <summary>
     /// Fixed Setup
@@ -309,6 +345,12 @@ public class SeriesPastSeasonTrack
     /// </summary>
     [JsonPropertyName("track_name")]
     public string TrackName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Config Name
+    /// </summary>
+    [JsonPropertyName("config_name")]
+    public string ConfigName { get; set; } = string.Empty;
 }
 
 /// <summary>

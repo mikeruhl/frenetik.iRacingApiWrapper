@@ -269,7 +269,7 @@ public class LeagueDetailed
         /// Tags
         /// </summary>
         [JsonPropertyName("tags")]
-        public List<TagCategoryResult> Tags { get; set; } = new List<TagCategoryResult>();
+        public List<TagResult> Tags { get; set; } = new List<TagResult>();
     }
 
     /// <summary>

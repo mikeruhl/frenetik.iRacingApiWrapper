@@ -36,6 +36,24 @@ namespace Frenetik.iRacingApiWrapper.Models
         public List<int> CarClassIds { get; set; } = new();
 
         /// <summary>
+        /// Car Classes, keyed by car class id
+        /// </summary>
+        [JsonPropertyName("car_classes")]
+        public Dictionary<string, SeriesSeasonsCarClassInfo> CarClasses { get; set; } = new();
+
+        /// <summary>
+        /// Capture Anon Telem
+        /// </summary>
+        [JsonPropertyName("capture_anon_telem")]
+        public bool CaptureAnonTelem { get; set; }
+
+        /// <summary>
+        /// Group Ids
+        /// </summary>
+        [JsonPropertyName("group_ids")]
+        public List<int> GroupIds { get; set; } = new();
+
+        /// <summary>
         /// Car Switching
         /// </summary>
         [JsonPropertyName("car_switching")]
@@ -130,6 +148,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("fixed_setup")]
         public bool FixedSetup { get; set; }
+
+        /// <summary>
+        /// Forecast Gen Option
+        /// </summary>
+        [JsonPropertyName("forecast_gen_option")]
+        public int ForecastGenOption { get; set; }
 
         /// <summary>
         /// Green White Checkered Limit
@@ -434,6 +458,48 @@ namespace Frenetik.iRacingApiWrapper.Models
     }
 
     /// <summary>
+    /// SeriesSeasonsCarClassInfo
+    /// </summary>
+    public class SeriesSeasonsCarClassInfo
+    {
+        /// <summary>
+        /// Car Class Id
+        /// </summary>
+        [JsonPropertyName("car_class_id")]
+        public int CarClassId { get; set; }
+
+        /// <summary>
+        /// Cars In Class
+        /// </summary>
+        [JsonPropertyName("cars_in_class")]
+        public List<SeriesSeasonsCarClassInfoCar> CarsInClass { get; set; } = new();
+
+        /// <summary>
+        /// Relative Speed
+        /// </summary>
+        [JsonPropertyName("relative_speed")]
+        public int RelativeSpeed { get; set; }
+    }
+
+    /// <summary>
+    /// SeriesSeasonsCarClassInfoCar
+    /// </summary>
+    public class SeriesSeasonsCarClassInfoCar
+    {
+        /// <summary>
+        /// Car Id
+        /// </summary>
+        [JsonPropertyName("car_id")]
+        public int CarId { get; set; }
+
+        /// <summary>
+        /// Package Id
+        /// </summary>
+        [JsonPropertyName("package_id")]
+        public int PackageId { get; set; }
+    }
+
+    /// <summary>
     /// SeriesSeasonsCarType
     /// </summary>
     public class SeriesSeasonsCarType
@@ -499,6 +565,18 @@ namespace Frenetik.iRacingApiWrapper.Models
         public bool EnablePitlaneCollisions { get; set; }
 
         /// <summary>
+        /// Event Options
+        /// </summary>
+        [JsonPropertyName("event_options")]
+        public SeriesSeasonScheduleEventOptions EventOptions { get; set; } = new();
+
+        /// <summary>
+        /// Event Sessions
+        /// </summary>
+        [JsonPropertyName("event_sessions")]
+        public List<SeriesSeasonScheduleEventSession> EventSessions { get; set; } = new();
+
+        /// <summary>
         /// Full Course Cautions
         /// </summary>
         [JsonPropertyName("full_course_cautions")]
@@ -515,6 +593,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("qual_attached")]
         public bool QualAttached { get; set; }
+
+        /// <summary>
+        /// Qual Time Descriptors
+        /// </summary>
+        [JsonPropertyName("qual_time_descriptors")]
+        public List<SeriesSeasonsRaceTimeDescriptor> QualTimeDescriptors { get; set; } = new();
 
         /// <summary>
         /// Qualify Laps
@@ -551,6 +635,12 @@ namespace Frenetik.iRacingApiWrapper.Models
         /// </summary>
         [JsonPropertyName("race_week_car_class_ids")]
         public List<int> RaceWeekCarClassIds { get; set; } = new();
+
+        /// <summary>
+        /// Race Week Car Classes
+        /// </summary>
+        [JsonPropertyName("race_week_car_classes")]
+        public List<SeriesSeasonScheduleCarClass> RaceWeekCarClasses { get; set; } = new();
 
         /// <summary>
         /// Race Week Cars

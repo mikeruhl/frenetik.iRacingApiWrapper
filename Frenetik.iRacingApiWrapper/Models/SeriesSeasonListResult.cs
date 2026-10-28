@@ -35,6 +35,12 @@ public class SeriesSeasonListResult
         public bool Active { get; set; }
 
         /// <summary>
+        /// Capture Anon Telem
+        /// </summary>
+        [JsonPropertyName("capture_anon_telem")]
+        public bool CaptureAnonTelem { get; set; }
+
+        /// <summary>
         /// Allowed Season Members NOTE: Can't find a case where this is not null
         /// </summary>
         [JsonPropertyName("allowed_season_members")]
@@ -153,6 +159,12 @@ public class SeriesSeasonListResult
         /// </summary>
         [JsonPropertyName("fixed_setup")]
         public bool FixedSetup { get; set; }
+
+        /// <summary>
+        /// Forecast Gen Option
+        /// </summary>
+        [JsonPropertyName("forecast_gen_option")]
+        public int ForecastGenOption { get; set; }
 
         /// <summary>
         /// Green White Checkered Limit

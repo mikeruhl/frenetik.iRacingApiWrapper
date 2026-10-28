@@ -128,7 +128,11 @@ public class IRacingApiService : IIRacingApiService
     public Task<List<LeagueMembership>> GetLeagueMembership(int? customerId = null, bool? includeLeague = null) => GetResources<List<LeagueMembership>>($"/league/membership", true, BuildParameters(["cust_id", "include_league"], [customerId, includeLeague]));
 
     /// <inheritdoc />
-    public Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null) => GetResources<LeagueRosterResult>($"/league/roster", true, BuildParameters(["league_id", "include_licenses"], [leagueId, includeLicenses]));
+    public async Task<LeagueRosterResult> GetLeagueRoster(int leagueId, bool? includeLicenses = null)
+    {
+        var response = await GetResources<MemberAwardsResponse<LeagueRosterResult>>("/league/roster", false, BuildParameters(["league_id", "include_licenses"], [leagueId, includeLicenses]));
+        return await GetFromApi<LeagueRosterResult>(response.DataUrl);
+    }
 
     /// <inheritdoc />
     public Task<LeagueSeasonResult> GetLeagueSeasons(int leagueId, bool? retired = null) => GetResources<LeagueSeasonResult>($"/league/seasons", true, BuildParameters(["league_id", "return"], [leagueId, retired]));

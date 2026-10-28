@@ -2,8 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+Starting with 2026.4.0, this project is versioned `YEAR.QUARTER.PATCH` (e.g. `2026.4.0` is the
+first release cut in 2026 Q4) instead of Semantic Versioning. `PATCH` still increments for any
+release within the same year/quarter, breaking or not — check the entry's own notes for
+compatibility impact rather than relying on the version number alone.
+
+## [2026.4.0]
+
+### Fixed
+- Fixed `GetLeagueRoster` silently failing in production: `/league/roster` returns a
+  `{type, data, data_url}` envelope rather than the `{link}` shape `GetResources` was told to
+  follow, so the method fetched an empty URL. Now resolves `data_url` like the award-instance
+  endpoints do.
+
+### Added
+- Added response model properties found missing by `ApiCoverageAnalyzer`, including
+  `csv_url`/`last_updated` on several `stats/season_*` endpoints, `forecast_gen_option` on
+  `SeriesSeasonsResult`/`SeriesSeasonListResult`/`SeriesSeasonScheduleResult`, `alt_asset_id` on
+  `Session`, winner/farm/car-class fields on `results/*` and `series/past_seasons`, and league
+  tag/season/roster fields. Also added `SeriesSeasonsResult.CarClasses`/`CaptureAnonTelem`/`GroupIds`
+  and the matching `Schedule.EventOptions`/`EventSessions`/`QualTimeDescriptors`/`RaceWeekCarClasses`,
+  only surfaced once the `season_year`/`season_quarter` sample value fix below let the analyzer
+  reach the fuller `series/seasons` response shape.
+- Extended `ApiCoverageAnalyzer`'s `ResponseFetcher` to send any parameter with a configured sample
+  value, not only ones the live API doc marks required — `results/search_hosted` and
+  `results/search_series` 400 without a date range despite neither being flagged required.
+
+### Fixed (tooling)
+- Fixed swapped `season_year`/`season_quarter` sample values in `ApiCoverageAnalyzer`'s
+  `appsettings.json`, which had silently broken `season/list` analysis and was masking a chunk of
+  the `series/seasons` response shape from the comparer.
 
 ## [6.0.0]
 

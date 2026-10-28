@@ -130,6 +130,72 @@ public class ResultsSeasonResultsListItem
     /// </summary>
     [JsonPropertyName("car_classes")]
     public List<CarClassShort> CarClasses { get; set; } = new List<CarClassShort>();
+
+    /// <summary>
+    /// Driver Changes
+    /// </summary>
+    [JsonPropertyName("driver_changes")]
+    public bool DriverChanges { get; set; }
+
+    /// <summary>
+    /// Farm
+    /// </summary>
+    [JsonPropertyName("farm")]
+    public ResultsSeasonResultsFarm Farm { get; set; } = new ResultsSeasonResultsFarm();
+
+    /// <summary>
+    /// Winner Helmet
+    /// </summary>
+    [JsonPropertyName("winner_helmet")]
+    public Helmet WinnerHelmet { get; set; } = new Helmet();
+
+    /// <summary>
+    /// Winner Id
+    /// </summary>
+    [JsonPropertyName("winner_id")]
+    public int WinnerId { get; set; }
+
+    /// <summary>
+    /// Winner License Level
+    /// </summary>
+    [JsonPropertyName("winner_license_level")]
+    public int WinnerLicenseLevel { get; set; }
+
+    /// <summary>
+    /// Winner Name
+    /// </summary>
+    [JsonPropertyName("winner_name")]
+    public string WinnerName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// ResultsSeasonResultsFarm
+/// </summary>
+public class ResultsSeasonResultsFarm
+{
+    /// <summary>
+    /// Farm Id
+    /// </summary>
+    [JsonPropertyName("farm_id")]
+    public int FarmId { get; set; }
+
+    /// <summary>
+    /// Display Name
+    /// </summary>
+    [JsonPropertyName("display_name")]
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Image Path
+    /// </summary>
+    [JsonPropertyName("image_path")]
+    public string ImagePath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Displayed
+    /// </summary>
+    [JsonPropertyName("displayed")]
+    public bool Displayed { get; set; }
 }
 
 /// <summary>

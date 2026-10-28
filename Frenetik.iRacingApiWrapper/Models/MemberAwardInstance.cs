@@ -6,6 +6,12 @@ namespace Frenetik.iRacingApiWrapper.Models;
 public partial class MemberAwardInstance
 {
     /// <summary>
+    /// Success
+    /// </summary>
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    /// <summary>
     /// Customer Id
     /// </summary>
     [JsonPropertyName("cust_id")]

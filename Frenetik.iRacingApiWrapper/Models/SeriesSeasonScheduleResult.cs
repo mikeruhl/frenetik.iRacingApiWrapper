@@ -578,6 +578,12 @@ public class SeriesSeasonScheduleWeather
     public int Fog { get; set; }
 
     /// <summary>
+    /// Forecast Gen Option
+    /// </summary>
+    [JsonPropertyName("forecast_gen_option")]
+    public int ForecastGenOption { get; set; }
+
+    /// <summary>
     /// Forecast Options
     /// </summary>
     [JsonPropertyName("forecast_options")]
