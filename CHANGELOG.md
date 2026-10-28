@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Starting with 2026.4.0, this project is versioned `YEAR.QUARTER.PATCH` (e.g. `2026.4.0` is the
-first release cut in 2026 Q4) instead of Semantic Versioning. `PATCH` still increments for any
+first release cut in 2026 Q4) instead of Semantic Versioning. iRacing ships its own API/data
+changes on the same season-quarter cadence, and that's when schema drift tends to show up here
+too — matching the wrapper's version to iRacing's quarter makes it obvious at a glance whether
+this wrapper has caught up with a given quarterly release yet. `PATCH` still increments for any
 release within the same year/quarter, breaking or not — check the entry's own notes for
 compatibility impact rather than relying on the version number alone.
 
