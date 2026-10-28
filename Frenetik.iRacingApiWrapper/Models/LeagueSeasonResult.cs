@@ -23,6 +23,12 @@ public class LeagueSeasonResult
     public int LeagueId { get; set; }
 
     /// <summary>
+    /// Retired
+    /// </summary>
+    [JsonPropertyName("retired")]
+    public bool Retired { get; set; }
+
+    /// <summary>
     /// Seasons
     /// </summary>
     [JsonPropertyName("seasons")]

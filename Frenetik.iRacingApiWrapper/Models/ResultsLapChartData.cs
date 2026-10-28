@@ -64,6 +64,12 @@ public class ResultsLapChartData : IChunkInfo<ResultLapChartDataChunkInfoData>
     /// </summary>
     [JsonPropertyName("chunk_info")]
     public ChunkInfo ChunkInfo { get; set; } = new ChunkInfo();
+
+    /// <summary>
+    /// Last Updated
+    /// </summary>
+    [JsonPropertyName("last_updated")]
+    public DateTime LastUpdated { get; set; }
 }
 
 /// <summary>

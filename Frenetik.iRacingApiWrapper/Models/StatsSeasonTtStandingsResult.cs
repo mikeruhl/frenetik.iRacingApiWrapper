@@ -76,5 +76,11 @@ public class StatsSeasonTtStandingsResult : IChunkInfo<StatsSeasonTtStandingsChu
     /// </summary>
     [JsonPropertyName("last_updated")]
     public DateTime LastUpdated { get; set; }
+
+    /// <summary>
+    /// Csv Url
+    /// </summary>
+    [JsonPropertyName("csv_url")]
+    public string CsvUrl { get; set; } = string.Empty;
 }
 

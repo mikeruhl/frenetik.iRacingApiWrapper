@@ -30,6 +30,12 @@ public class PointsSystemResponse
     public int LeagueId { get; set; }
 
     /// <summary>
+    /// Season Id
+    /// </summary>
+    [JsonPropertyName("season_id")]
+    public int? SeasonId { get; set; }
+
+    /// <summary>
     /// PointsSystem
     /// </summary>
     public class PointsSystem

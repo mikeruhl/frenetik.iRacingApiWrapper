@@ -6,6 +6,12 @@ namespace Frenetik.iRacingApiWrapper.Models;
 public class Session
 {
     /// <summary>
+    /// Alt Asset Id
+    /// </summary>
+    [JsonPropertyName("alt_asset_id")]
+    public int AltAssetId { get; set; }
+
+    /// <summary>
     /// Num Drivers
     /// </summary>
     [JsonPropertyName("num_drivers")]

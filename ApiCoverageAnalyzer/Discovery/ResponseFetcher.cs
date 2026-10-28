@@ -21,28 +21,27 @@ public class ResponseFetcher(
 
     /// <summary>
     /// Fetches the raw JSON for an endpoint path (e.g., "/series/seasons").
-    /// If the endpoint has required parameters, builds a query string from
-    /// <see cref="AnalyzerSettings.SampleParameterValues"/>.
-    /// Returns null if the call fails or required parameters have no sample values.
+    /// Builds a query string from every parameter with a configured sample value
+    /// (<see cref="AnalyzerSettings.SampleParameterValues"/>), required or not — some endpoints
+    /// 400 without an optional param the live API doc doesn't flag as required.
+    /// Returns null if the call fails or a required parameter has no sample value.
     /// </summary>
     public async Task<JsonElement?> FetchAsync(string apiPath, Dictionary<string, EndpointParameter>? parameters = null)
     {
         // Ensure path starts with /
         var path = apiPath.StartsWith('/') ? apiPath : $"/{apiPath}";
 
-        // Append query string for required parameters using configured sample values
-        var requiredParams = parameters?.Where(p => p.Value.Required).ToList();
-        if (requiredParams is { Count: > 0 })
+        if (parameters is { Count: > 0 })
         {
             var sample = analyzerSettings.Value.SampleParameterValues;
             var queryParts = new List<string>();
             var missingValues = new List<string>();
 
-            foreach (var (name, _) in requiredParams)
+            foreach (var (name, parameter) in parameters)
             {
                 if (sample.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value))
                     queryParts.Add($"{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}");
-                else
+                else if (parameter.Required)
                     missingValues.Add(name);
             }
 
@@ -54,7 +53,8 @@ public class ResponseFetcher(
                 return null;
             }
 
-            path = $"{path}?{string.Join("&", queryParts)}";
+            if (queryParts.Count > 0)
+                path = $"{path}?{string.Join("&", queryParts)}";
         }
 
         var url = $"{_baseUrl}/data{path}";

@@ -59,6 +59,12 @@ public class ResultSearchHostedParams
     public string StartRangeBegin { get; set; } = string.Empty;
 
     /// <summary>
+    /// Start Range End
+    /// </summary>
+    [JsonPropertyName("start_range_end")]
+    public string StartRangeEnd { get; set; } = string.Empty;
+
+    /// <summary>
     /// Category Ids
     /// </summary>
     [JsonPropertyName("category_ids")]
@@ -69,6 +75,36 @@ public class ResultSearchHostedParams
     /// </summary>
     [JsonPropertyName("host_cust_id")]
     public int HostCustId { get; set; }
+
+    /// <summary>
+    /// Customer Id
+    /// </summary>
+    [JsonPropertyName("cust_id")]
+    public int CustId { get; set; }
+
+    /// <summary>
+    /// Team Id
+    /// </summary>
+    [JsonPropertyName("team_id")]
+    public int TeamId { get; set; }
+
+    /// <summary>
+    /// Car Id
+    /// </summary>
+    [JsonPropertyName("car_id")]
+    public int CarId { get; set; }
+
+    /// <summary>
+    /// Track Id
+    /// </summary>
+    [JsonPropertyName("track_id")]
+    public int TrackId { get; set; }
+
+    /// <summary>
+    /// League Id
+    /// </summary>
+    [JsonPropertyName("league_id")]
+    public int LeagueId { get; set; }
 }
 
 /// <summary>

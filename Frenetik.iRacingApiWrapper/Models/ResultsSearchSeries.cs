@@ -81,6 +81,48 @@ public class ResultsSearchSeriesDataParameters
     /// </summary>
     [JsonPropertyName("event_types")]
     public List<int> EventTypes { get; set; } = new List<int>();
+
+    /// <summary>
+    /// Customer Id
+    /// </summary>
+    [JsonPropertyName("cust_id")]
+    public int CustId { get; set; }
+
+    /// <summary>
+    /// Team Id
+    /// </summary>
+    [JsonPropertyName("team_id")]
+    public int TeamId { get; set; }
+
+    /// <summary>
+    /// Start Range Begin
+    /// </summary>
+    [JsonPropertyName("start_range_begin")]
+    public string StartRangeBegin { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Start Range End
+    /// </summary>
+    [JsonPropertyName("start_range_end")]
+    public string StartRangeEnd { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Series Id
+    /// </summary>
+    [JsonPropertyName("series_id")]
+    public int SeriesId { get; set; }
+
+    /// <summary>
+    /// Race Week Num
+    /// </summary>
+    [JsonPropertyName("race_week_num")]
+    public int RaceWeekNum { get; set; }
+
+    /// <summary>
+    /// Season License Groups
+    /// </summary>
+    [JsonPropertyName("season_license_groups")]
+    public List<int> SeasonLicenseGroups { get; set; } = new List<int>();
 }
 /// <summary>
 /// ResultsSearchSeriesChunkInfoData

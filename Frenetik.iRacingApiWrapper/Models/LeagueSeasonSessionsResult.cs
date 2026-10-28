@@ -18,6 +18,12 @@ public partial class LeagueSeasonSessionsResult
     public bool Success { get; set; }
 
     /// <summary>
+    /// Subscribed
+    /// </summary>
+    [JsonPropertyName("subscribed")]
+    public bool Subscribed { get; set; }
+
+    /// <summary>
     /// Season Id
     /// </summary>
     [JsonPropertyName("season_id")]

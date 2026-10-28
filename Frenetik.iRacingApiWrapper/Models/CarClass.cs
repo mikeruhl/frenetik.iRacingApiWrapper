@@ -48,6 +48,18 @@ public class CarClass
     public string ShortName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Strength Of Field
+    /// </summary>
+    [JsonPropertyName("strength_of_field")]
+    public int StrengthOfField { get; set; }
+
+    /// <summary>
+    /// Num Entries
+    /// </summary>
+    [JsonPropertyName("num_entries")]
+    public int NumEntries { get; set; }
+
+    /// <summary>
     /// Reference to a car within the class
     /// </summary>
     public class CarRef

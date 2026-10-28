@@ -47,6 +47,18 @@ public class StatsWorldRecordResultsData
     public int TrackId { get; set; }
 
     /// <summary>
+    /// Season Year
+    /// </summary>
+    [JsonPropertyName("season_year")]
+    public int? SeasonYear { get; set; }
+
+    /// <summary>
+    /// Season Quarter
+    /// </summary>
+    [JsonPropertyName("season_quarter")]
+    public int? SeasonQuarter { get; set; }
+
+    /// <summary>
     /// Chunk Info
     /// </summary>
     [JsonPropertyName("chunk_info")]

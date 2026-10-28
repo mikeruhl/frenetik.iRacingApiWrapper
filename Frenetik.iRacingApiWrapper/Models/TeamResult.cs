@@ -36,6 +36,12 @@ public class TeamResult
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// Message
+    /// </summary>
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
     /// About
     /// </summary>
     [JsonPropertyName("about")]
